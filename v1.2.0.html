@@ -1,0 +1,3194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seating Plan Generator</title>
+    <link rel="icon" href="favicon.png?v=2" type="image/png">
+    <link rel="apple-touch-icon" href="favicon.png?v=2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #156872;
+            --accent-soft: #e8f7fc;
+            --accent-border: #b3dfe8;
+            --bg: #e4f2f6;
+            --card: #ffffff;
+            --surface: #1b1c19;
+            --surface-variant: #3f484a;
+            --shadow: 0 8px 28px rgba(27, 28, 25, 0.08);
+            --radius-lg: 20px;
+            --font: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            background: var(--bg);
+            color: var(--surface);
+            font-family: var(--font);
+        }
+        body {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            width: 100%;
+        }
+        .app-shell {
+            width: 100%;
+            flex: 1 1 100%;
+            margin: 0;
+            padding: 20px 24px 48px;
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 18px;
+            min-width: 0;
+        }
+        .brand-logo {
+            display: block;
+            width: min(214px, 100%);
+            height: auto;
+            aspect-ratio: 1024 / 347;
+            max-width: 100%;
+            min-width: 0;
+            object-fit: contain;
+            flex: 0 1 auto;
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--accent);
+        }
+        h2 {
+            margin: 0 0 14px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            line-height: 1.25;
+            color: var(--accent);
+        }
+        .panel-hint {
+            margin: -6px 0 16px;
+            color: var(--surface-variant);
+            font-size: 0.875rem;
+            line-height: 1.45;
+        }
+        .workspace {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            gap: 24px;
+            width: 100%;
+        }
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--accent-border);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+        #input-container,
+        #output-container {
+            box-sizing: border-box;
+            flex: 1 1 50%;
+            width: 50%;
+            min-width: 0;
+            align-self: stretch;
+        }
+        #input-container {
+            container-type: inline-size;
+        }
+        .input-group {
+            display: grid;
+            gap: 6px;
+            margin: 0 0 12px;
+            min-width: 0;
+        }
+        .input-row {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .input-row .input-group {
+            margin-bottom: 0;
+        }
+        label {
+            display: block;
+            min-width: 0;
+            color: var(--surface);
+            font-size: 0.92rem;
+            font-weight: 700;
+            line-height: 1.3;
+            overflow-wrap: break-word;
+        }
+        input[type="number"],
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            margin: 0;
+            border: 1px solid var(--accent-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: #ffffff;
+            color: var(--surface);
+            font: inherit;
+        }
+        input[type="file"] {
+            padding: 10px 12px;
+            font-size: 0.875rem;
+        }
+        input[type="file"]::file-selector-button {
+            margin-right: 12px;
+            border: 1px solid #b3dfe8;
+            border-radius: 999px;
+            background: #e8f7fc;
+            color: #156872;
+            padding: 8px 14px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        input[type="file"]::-webkit-file-upload-button {
+            margin-right: 12px;
+            border: 1px solid #b3dfe8;
+            border-radius: 999px;
+            background: #e8f7fc;
+            color: #156872;
+            padding: 8px 14px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background: #d4eef6;
+            filter: none;
+        }
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background: #d4eef6;
+            filter: none;
+        }
+        input:focus-visible {
+            outline: 2px solid #156872;
+            outline-offset: 2px;
+            box-shadow: none;
+        }
+        .files {
+            display: grid;
+            gap: 14px;
+            margin: 4px 0 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--accent-border);
+        }
+        .files .input-group {
+            margin-bottom: 0;
+        }
+        #class-list-status,
+        #word-template-status {
+            margin: 0;
+            color: var(--surface-variant);
+            font-size: 0.875rem;
+            line-height: 1.45;
+        }
+        #class-list-status:empty,
+        #word-template-status:empty {
+            display: none;
+        }
+        .form-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        button {
+            appearance: none;
+            width: fit-content;
+            max-width: 100%;
+            margin: 0;
+            padding: 10px 16px;
+            border: 1px solid #156872;
+            border-radius: 999px;
+            background: #156872;
+            color: #ffffff;
+            font-family: var(--font);
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.25;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(21, 104, 114, 0.35);
+        }
+        button:hover {
+            filter: brightness(0.97);
+        }
+        button:active {
+            filter: brightness(0.93);
+        }
+        button:focus-visible {
+            outline: 2px solid #0e4a52;
+            outline-offset: 2px;
+        }
+        #reset-button {
+            background: #ffffff;
+            color: #156872;
+            border: 1px solid #b3dfe8;
+            box-shadow: 0 4px 14px rgba(21, 104, 114, 0.16);
+        }
+        #reset-button:hover {
+            background: #e8f7fc;
+            filter: none;
+        }
+        #reset-button:active {
+            background: #c9e6f2;
+            filter: none;
+        }
+        .class-list-line {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            column-gap: 10px;
+            row-gap: 6px;
+            min-width: 0;
+        }
+        .class-list-line > label {
+            flex: 0 1 auto;
+            width: auto;
+            margin: 0;
+        }
+        #download-class-list {
+            flex: 0 0 auto;
+            max-width: 100%;
+            padding: 3px 9px;
+            font-size: 0.72rem;
+            line-height: 1.2;
+            box-shadow: 0 2px 6px rgba(21, 104, 114, 0.28);
+            background: #e8f7fc;
+            color: #156872;
+            border-color: #b3dfe8;
+        }
+        #download-class-list:hover {
+            background: #d4eef6;
+            filter: none;
+        }
+        .height-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 14px;
+            margin: 0 0 14px;
+            padding: 0;
+            list-style: none;
+            color: var(--surface-variant);
+            font-size: 0.875rem;
+            font-weight: 650;
+        }
+        .height-legend li {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .swatch {
+            width: 16px;
+            height: 16px;
+            border-radius: 5px;
+            border: 1px solid rgba(27, 28, 25, 0.12);
+        }
+        .plan-empty {
+            margin: 0 0 14px;
+            color: var(--surface-variant);
+            font-size: 0.875rem;
+            line-height: 1.45;
+        }
+        #output-container:has(table) .plan-empty {
+            display: none;
+        }
+        .unseated-drop {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            min-height: 52px;
+            margin: 0 0 14px;
+            padding: 8px;
+            border: 1px dashed var(--accent-border);
+            border-radius: 12px;
+            background: var(--accent-soft);
+        }
+        .unseated-drop[hidden] {
+            display: none;
+        }
+        .unseated-drop.seat-drop-target,
+        td.seat-drop-target {
+            box-shadow: inset 0 0 0 2px var(--accent);
+        }
+        .seat-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            min-width: 72px;
+            min-height: 36px;
+            padding: 6px 8px;
+            border: 1px solid rgba(27, 28, 25, 0.12);
+            border-radius: 8px;
+            cursor: grab;
+            user-select: none;
+        }
+        td[draggable="true"] {
+            cursor: grab;
+            user-select: none;
+        }
+        td.is-dragging,
+        .seat-chip.is-dragging {
+            opacity: 0.45;
+        }
+        .plan-scroll {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow-x: auto;
+        }
+        #container {
+            display: flex;
+            justify-content: center;
+            width: max-content;
+            min-width: 100%;
+        }
+        table {
+            border-collapse: collapse;
+            width: max-content;
+            flex: 0 0 auto;
+            margin: 0;
+            background: #ffffff;
+        }
+        tr {
+            height: 48px;
+            min-height: 48px;
+        }
+        td {
+            border: 1px solid #d4e3e8;
+            padding: 10px 8px;
+            text-align: center;
+            min-width: 72px;
+            height: 48px;
+            min-height: 48px;
+            white-space: normal;
+            font-weight: 650;
+            vertical-align: middle;
+        }
+        .tall {
+            background-color: #d9f2df;
+        }
+        .medium {
+            background-color: #f3f5c8;
+        }
+        .short {
+            background-color: #f6e4ea;
+        }
+        td:nth-child(2n):not(:last-child) {
+            border-right: 5mm double #c4d4db;
+        }
+        td.tall,
+        td.medium,
+        td.short {
+            background-clip: padding-box;
+        }
+        table.template-font td {
+            height: 48px;
+            min-height: 48px;
+            font-weight: 400;
+        }
+        #blackboard {
+            display: none;
+            background-color: #156872;
+            color: white;
+            font-family: Chalkboard, "Patrick Hand", cursive;
+            font-size: 1.35rem;
+            letter-spacing: 0.02em;
+            text-align: center;
+            padding: 14px 16px;
+            margin-top: 16px;
+            border-radius: 14px;
+            width: 100%;
+            box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.14);
+        }
+        #export-button {
+            margin: 16px auto 0;
+            border: 1px solid #b3dfe8;
+            border-radius: 999px;
+            background: #e8f7fc;
+            color: #156872;
+            box-shadow: none;
+        }
+        #export-button:hover {
+            background: #d4eef6;
+            filter: none;
+        }
+        #export-button:active {
+            background: #d4eef6;
+            filter: none;
+        }
+        @container (min-width: 540px) {
+            .input-row.counts {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-rows: auto auto;
+                column-gap: 12px;
+                row-gap: 6px;
+                align-items: stretch;
+            }
+            .input-row.counts .input-group {
+                display: grid;
+                grid-row: span 2;
+                grid-template-rows: subgrid;
+                gap: 6px;
+            }
+            .input-row.counts label {
+                align-self: end;
+            }
+        }
+        @container (min-width: 650px) {
+            .input-row.heights {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-rows: auto auto;
+                column-gap: 12px;
+                row-gap: 6px;
+                align-items: stretch;
+            }
+            .input-row.heights .input-group {
+                display: grid;
+                grid-row: span 2;
+                grid-template-rows: subgrid;
+                gap: 6px;
+            }
+            .input-row.heights label {
+                align-self: end;
+            }
+        }
+        @media (max-width: 800px) {
+            .workspace {
+                flex-wrap: wrap;
+            }
+            #input-container,
+            #output-container {
+                flex: 1 1 100%;
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+        @media (max-width: 480px) {
+            .app-shell {
+                padding: 16px 16px 32px;
+            }
+            .panel {
+                padding: 16px;
+            }
+            h1 {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <header class="top-bar">
+            <img class="brand-logo" src="seating-plan-logo.png?v=2" alt="Seating Plan Generator">
+        </header>
+        <div class="workspace">
+            <div id="input-container" class="panel">
+                <h2>Class setup</h2>
+                <div class="input-row counts">
+                    <div class="input-group">
+                        <label for="rows">No. of Rows:</label>
+                        <input type="number" id="rows" value="4" min="1" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="cols">No. of Columns:</label>
+                        <input type="number" id="cols" value="8" min="1" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="students">Total No. of Students:</label>
+                        <input type="number" id="students" value="32" min="1" step="1">
+                    </div>
+                </div>
+                <div class="input-row heights">
+                    <div class="input-group">
+                        <label for="tall">Tall Students (e.g. 1,3,5):</label>
+                        <input type="text" id="tall" value="">
+                    </div>
+                    <div class="input-group">
+                        <label for="short">Short Students (e.g. 20,22,24):</label>
+                        <input type="text" id="short" value="">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="naughty">Naughty Students (sit at the front and apart; e.g. 4,6):</label>
+                    <input type="text" id="naughty" value="">
+                </div>
+                <div class="input-group">
+                    <label for="restrictions">Separate Students (e.g. 1-2,5-6):</label>
+                    <input type="text" id="restrictions" value="">
+                </div>
+                <div class="input-group">
+                    <label for="together">Pair Up Students (e.g. 3-4,7-8):</label>
+                    <input type="text" id="together" value="">
+                </div>
+                <div class="files">
+                    <div class="input-group">
+                        <div class="class-list-line">
+                            <label for="class-list-file">Class list (.xlsx)</label>
+                            <button type="button" id="download-class-list">Download class list template</button>
+                        </div>
+                        <input type="file" id="class-list-file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                        <p id="class-list-status"></p>
+                    </div>
+                    <div class="input-group">
+                        <label for="word-template-file">Seating plan template (.docx or .xlsx)</label>
+                        <input type="file" id="word-template-file" accept=".docx,.xlsx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                        <p id="word-template-status"></p>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button onclick="generatePlan()">Generate Seating Plan</button>
+                    <button id="reset-button" onclick="resetForm()">Reset</button>
+                </div>
+            </div>
+
+            <div id="output-container" class="panel">
+                <h2>Seating plan</h2>
+                <ul class="height-legend" aria-label="Seat colours">
+                    <li><span class="swatch tall"></span>Tall</li>
+                    <li><span class="swatch medium"></span>Medium</li>
+                    <li><span class="swatch short"></span>Short</li>
+                </ul>
+                <p class="plan-empty">Generate a seating plan to see the seats.</p>
+                <div id="unseated-drop" class="unseated-drop" hidden aria-label="Students removed from seats"></div>
+                <div class="plan-scroll">
+                    <div id="container"></div>
+                </div>
+                <div id="blackboard">Blackboard</div>
+                <button id="export-button" onclick="exportToWord()" style="display: none;">Export seating plan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* MODULES:START */
+const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+const XML_NS = 'http://www.w3.org/XML/1998/namespace'
+
+function decodeXml(text) {
+  return text.replace(/&(#x[0-9a-fA-F]+|#\d+|lt|gt|quot|apos|amp);/g, (_, ent) => {
+    if (ent === 'lt') return '<'
+    if (ent === 'gt') return '>'
+    if (ent === 'quot') return '"'
+    if (ent === 'apos') return "'"
+    if (ent === 'amp') return '&'
+    if (ent[1] === 'x') return String.fromCodePoint(parseInt(ent.slice(2), 16))
+    return String.fromCodePoint(parseInt(ent.slice(1), 10))
+  })
+}
+
+function encodeXml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r/g, '&#xD;')
+}
+
+function encodeAttr(text) {
+  return encodeXml(text).replace(/"/g, '&quot;').replace(/\n/g, '&#xA;').replace(/\t/g, '&#x9;')
+}
+
+function resolveName(qname, nsMap) {
+  const colon = qname.indexOf(':')
+  if (colon === -1) return { local: qname, ns: nsMap[''] || '' }
+  const prefix = qname.slice(0, colon)
+  return { local: qname.slice(colon + 1), ns: nsMap[prefix] || '' }
+}
+
+class Parser {
+  constructor(text) {
+    this.text = text.replace(/^\uFEFF/, '')
+    this.i = 0
+  }
+
+  parseDocument() {
+    let declaration = null
+    this.skipSpace()
+    if (this.text.startsWith('<?xml', this.i)) {
+      const end = this.text.indexOf('?>', this.i)
+      declaration = this.text.slice(this.i, end + 2)
+      this.i = end + 2
+    }
+    this.skipMisc()
+    const root = this.parseElement([])
+    return { declaration, root }
+  }
+
+  skipSpace() {
+    while (this.i < this.text.length && /\s/.test(this.text[this.i])) this.i++
+  }
+
+  skipMisc() {
+    for (;;) {
+      this.skipSpace()
+      if (this.text.startsWith('<!--', this.i)) this.i = this.text.indexOf('-->', this.i) + 3
+      else if (this.text.startsWith('<?', this.i)) this.i = this.text.indexOf('?>', this.i) + 2
+      else if (this.text.startsWith('<!', this.i)) this.i = this.text.indexOf('>', this.i) + 1
+      else break
+    }
+  }
+
+  readName() {
+    const start = this.i
+    while (this.i < this.text.length && /[A-Za-z0-9:_.-]/.test(this.text[this.i])) this.i++
+    return this.text.slice(start, this.i)
+  }
+
+  parseElement(ancestors) {
+    if (this.text[this.i] !== '<') throw new Error('Expected < at ' + this.i)
+    this.i++
+    const name = this.readName()
+    const rawAttrs = []
+    for (;;) {
+      this.skipSpace()
+      if (this.text[this.i] === '>' || this.text[this.i] === '/') break
+      const attrName = this.readName()
+      this.skipSpace()
+      this.i++
+      this.skipSpace()
+      const quote = this.text[this.i++]
+      const start = this.i
+      while (this.text[this.i] !== quote) this.i++
+      rawAttrs.push({ name: attrName, value: decodeXml(this.text.slice(start, this.i)) })
+      this.i++
+    }
+    const parentMap = ancestors.length
+      ? ancestors[ancestors.length - 1].nsMap
+      : { xml: XML_NS }
+    const nsMap = { ...parentMap }
+    for (const attr of rawAttrs) {
+      if (attr.name === 'xmlns') nsMap[''] = attr.value
+      else if (attr.name.startsWith('xmlns:')) nsMap[attr.name.slice(6)] = attr.value
+    }
+    const resolved = resolveName(name, nsMap)
+    const el = {
+      type: 'element',
+      name,
+      local: resolved.local,
+      ns: resolved.ns,
+      attrs: rawAttrs.map(attr => {
+        const attrResolved = resolveName(attr.name, nsMap)
+        return { name: attr.name, local: attrResolved.local, ns: attrResolved.ns, value: attr.value }
+      }),
+      children: [],
+      nsMap
+    }
+    if (this.text[this.i] === '/') {
+      this.i += 2
+      return el
+    }
+    this.i++
+    const stack = ancestors.concat(el)
+    while (!this.text.startsWith('</', this.i)) {
+      if (this.i >= this.text.length) throw new Error('Unclosed ' + name)
+      if (this.text[this.i] === '<') {
+        if (this.text.startsWith('<!--', this.i) || this.text.startsWith('<?', this.i) || this.text.startsWith('<!', this.i)) {
+          this.skipMisc()
+          continue
+        }
+        el.children.push(this.parseElement(stack))
+      } else {
+        const start = this.i
+        while (this.i < this.text.length && this.text[this.i] !== '<') this.i++
+        const raw = this.text.slice(start, this.i)
+        if (raw) el.children.push({ type: 'text', text: decodeXml(raw) })
+      }
+    }
+    this.i += 2
+    const closeName = this.readName()
+    if (closeName !== name) throw new Error('Mismatched close tag ' + closeName)
+    this.skipSpace()
+    this.i++
+    return el
+  }
+}
+
+function parseXml(text) {
+  return new Parser(text).parseDocument()
+}
+
+function serializeNode(node) {
+  if (node.type === 'text') return encodeXml(node.text)
+  const attrs = node.attrs.map(attr => ` ${attr.name}="${encodeAttr(attr.value)}"`).join('')
+  if (node.children.length === 0) return `<${node.name}${attrs}/>`
+  return `<${node.name}${attrs}>${node.children.map(serializeNode).join('')}</${node.name}>`
+}
+
+function serializeXml(doc) {
+  return (doc.declaration ? doc.declaration : '') + serializeNode(doc.root)
+}
+
+function cloneNode(node) {
+  if (node.type === 'text') return { type: 'text', text: node.text }
+  return {
+    type: 'element',
+    name: node.name,
+    local: node.local,
+    ns: node.ns,
+    attrs: node.attrs.map(attr => ({ ...attr })),
+    children: node.children.map(cloneNode),
+    nsMap: node.nsMap
+  }
+}
+
+function wordChildren(el, local) {
+  return el.children.filter(child => child.type === 'element' && child.ns === WORD_NS && child.local === local)
+}
+
+function wordAttr(el, local) {
+  const attr = el.attrs.find(item => item.local === local)
+  return attr ? attr.value : null
+}
+
+function descendants(el, local) {
+  const found = []
+  for (const child of el.children) {
+    if (child.type !== 'element') continue
+    if (child.local === local) found.push(child)
+    found.push(...descendants(child, local))
+  }
+  return found
+}
+
+function crc32(bytes) {
+  let crc = 0xffffffff
+  for (let i = 0; i < bytes.length; i++) {
+    crc ^= bytes[i]
+    for (let bit = 0; bit < 8; bit++) {
+      const mask = -(crc & 1)
+      crc = (crc >>> 1) ^ (0xedb88320 & mask)
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0
+}
+
+
+const encoder = new TextEncoder()
+const decoder = new TextDecoder()
+
+function asBytes(buffer) {
+  return buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer)
+}
+
+function viewOf(bytes) {
+  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+}
+
+function findEocd(bytes) {
+  const start = Math.max(0, bytes.length - 22 - 65535)
+  for (let i = bytes.length - 22; i >= start; i--) {
+    if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) {
+      return i
+    }
+  }
+  throw new Error('This file is not a zip archive.')
+}
+
+function readEntries(bytes) {
+  const view = viewOf(bytes)
+  const eocd = findEocd(bytes)
+  const count = view.getUint16(eocd + 10, true)
+  let ptr = view.getUint32(eocd + 16, true)
+  const entries = []
+  for (let i = 0; i < count; i++) {
+    if (view.getUint32(ptr, true) !== 0x02014b50) throw new Error('Bad central directory')
+    const flags = view.getUint16(ptr + 8, true)
+    const method = view.getUint16(ptr + 10, true)
+    const time = view.getUint16(ptr + 12, true)
+    const date = view.getUint16(ptr + 14, true)
+    const crc = view.getUint32(ptr + 16, true)
+    const compressedSize = view.getUint32(ptr + 20, true)
+    const uncompressedSize = view.getUint32(ptr + 24, true)
+    const nameLen = view.getUint16(ptr + 28, true)
+    const extraLen = view.getUint16(ptr + 30, true)
+    const commentLen = view.getUint16(ptr + 32, true)
+    const localOffset = view.getUint32(ptr + 42, true)
+    const name = decoder.decode(bytes.subarray(ptr + 46, ptr + 46 + nameLen))
+    const localNameLen = view.getUint16(localOffset + 26, true)
+    const localExtraLen = view.getUint16(localOffset + 28, true)
+    const dataStart = localOffset + 30 + localNameLen + localExtraLen
+    const data = bytes.slice(dataStart, dataStart + compressedSize)
+    entries.push({ name, flags, method, time, date, crc, compressedSize, uncompressedSize, data })
+    ptr += 46 + nameLen + extraLen + commentLen
+  }
+  return entries
+}
+
+async function inflateRaw(bytes) {
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
+  return new Uint8Array(await new Response(stream).arrayBuffer())
+}
+
+function concat(parts) {
+  const size = parts.reduce((sum, part) => sum + part.length, 0)
+  const out = new Uint8Array(size)
+  let offset = 0
+  for (const part of parts) {
+    out.set(part, offset)
+    offset += part.length
+  }
+  return out
+}
+
+function u16(value) {
+  const bytes = new Uint8Array(2)
+  new DataView(bytes.buffer).setUint16(0, value, true)
+  return bytes
+}
+
+function u32(value) {
+  const bytes = new Uint8Array(4)
+  new DataView(bytes.buffer).setUint32(0, value, true)
+  return bytes
+}
+
+function writeZip(entries) {
+  const locals = []
+  const centrals = []
+  let offset = 0
+  for (const entry of entries) {
+    const name = encoder.encode(entry.name)
+    const local = concat([
+      u32(0x04034b50), u16(20), u16(entry.flags), u16(entry.method),
+      u16(entry.time), u16(entry.date), u32(entry.crc),
+      u32(entry.compressedSize), u32(entry.uncompressedSize),
+      u16(name.length), u16(0), name, entry.data
+    ])
+    locals.push(local)
+    centrals.push(concat([
+      u32(0x02014b50), u16(20), u16(20), u16(entry.flags), u16(entry.method),
+      u16(entry.time), u16(entry.date), u32(entry.crc),
+      u32(entry.compressedSize), u32(entry.uncompressedSize),
+      u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), name
+    ]))
+    offset += local.length
+  }
+  const central = concat(centrals)
+  const eocd = concat([
+    u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length),
+    u32(central.length), u32(offset), u16(0)
+  ])
+  return concat([...locals, central, eocd])
+}
+
+function zipStored(files) {
+  return writeZip(files.map(file => ({
+    name: file.name,
+    flags: 0x800,
+    method: 0,
+    time: 0,
+    date: 0,
+    crc: crc32(file.data),
+    compressedSize: file.data.length,
+    uncompressedSize: file.data.length,
+    data: file.data
+  })))
+}
+
+async function unzip(buffer) {
+  const entries = readEntries(asBytes(buffer))
+  const files = new Map()
+  for (const entry of entries) {
+    let data = entry.data
+    if (entry.method === 8) data = await inflateRaw(data)
+    else if (entry.method !== 0) throw new Error('Unsupported zip compression ' + entry.method)
+    files.set(entry.name, data)
+  }
+  return files
+}
+
+function replaceZipEntry(buffer, entryName, contents) {
+  const entries = readEntries(asBytes(buffer))
+  const entry = entries.find(item => item.name === entryName)
+  if (!entry) throw new Error('Missing zip entry ' + entryName)
+  entry.method = 0
+  entry.flags = (entry.flags & ~0x8) | 0x800
+  entry.crc = crc32(contents)
+  entry.compressedSize = contents.length
+  entry.uncompressedSize = contents.length
+  entry.data = contents
+  return writeZip(entries)
+}
+
+function isHan(char) {
+  return /\p{Script=Han}/u.test(char)
+}
+
+function matchLatin(text, index) {
+  const word = "[A-Za-z]+(?:['’-][A-Za-z]+)*"
+  const match = text.slice(index).match(new RegExp('^' + word + '(?: ' + word + ')*'))
+  return match ? match[0] : ''
+}
+
+function tokenize(text) {
+  const tokens = []
+  let index = 0
+  while (index < text.length) {
+    const rest = text.slice(index)
+    const classMatch = rest.match(/^(\d+)([A-Za-z])(?![A-Za-z0-9])/)
+    if (classMatch) {
+      tokens.push({ type: 'class', value: classMatch[0], start: index, end: index + classMatch[0].length })
+      index += classMatch[0].length
+      continue
+    }
+    const integerMatch = rest.match(/^\d+/)
+    if (integerMatch) {
+      tokens.push({ type: 'classNo', value: integerMatch[0], start: index, end: index + integerMatch[0].length })
+      index += integerMatch[0].length
+      continue
+    }
+    if (isHan(text[index])) {
+      let end = index + 1
+      while (end < text.length && isHan(text[end])) end++
+      tokens.push({ type: 'chiName', value: text.slice(index, end), start: index, end })
+      index = end
+      continue
+    }
+    const latin = matchLatin(text, index)
+    if (latin) {
+      const words = latin.split(' ')
+      tokens.push({
+        type: words.length >= 2 ? 'engName' : 'nickname',
+        value: latin,
+        start: index,
+        end: index + latin.length
+      })
+      index += latin.length
+      continue
+    }
+    index++
+  }
+  return tokens
+}
+
+function seatLabel(student, no) {
+  const chi = student?.chiName?.trim() || ''
+  const eng = student?.engName?.trim() || ''
+  if (chi) return chi
+  if (eng) return eng
+  return String(no)
+}
+
+function fieldValue(student, field) {
+  if (field === 'class') return student.className || ''
+  if (field === 'classNo') return student.classNo || ''
+  if (field === 'chiName') return student.chiName || ''
+  if (field === 'engName') return student.engName || ''
+  if (field === 'nickname') return student.nickname || ''
+  return ''
+}
+
+function choosePattern(sequences) {
+  const groups = new Map()
+  sequences.forEach((sequence, index) => {
+    const key = sequence.join('\0')
+    if (!groups.has(key)) groups.set(key, { sequence, count: 0, index })
+    groups.get(key).count++
+  })
+  let best = null
+  for (const group of groups.values()) {
+    if (
+      !best ||
+      group.count > best.count ||
+      (group.count === best.count && group.sequence.length > best.sequence.length) ||
+      (group.count === best.count && group.sequence.length === best.sequence.length && group.index < best.index)
+    ) {
+      best = group
+    }
+  }
+  return best ? best.sequence : []
+}
+
+
+const CLASS_LIST_HEADERS = ['No.', 'Class', 'Class no.', 'Eng Name', 'Chi Name', 'Nickname']
+const HEADER_ERROR = 'The class list must start with No., Class, Class no., Eng Name, Chi Name, Nickname.'
+
+const CLASS_LIST_TEMPLATE_BASE64 = `
+UEsDBBQABgAIAAAAIQA5KltTfwEAAHsFAAATAAgCW0NvbnRlbnRfVHlwZXNdLnhtbCCiBAIooAACAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACslMluwjAQhu+V+g6Rr1Vs6KGqKgKHLscWqfQBTDwQ
+K97kMdvb1zGLUJUSEFxiJfb8358ZzwxGa62yJXiU1hSkT3skA1NaIc28ID+Tj/yZZBi4EVxZAwXZAJLR
+8P5uMNk4wCxGGyxIFYJ7YQzLCjRHah2YuDOzXvMQX/2cOV7WfA7ssdd7YqU1AUzIQ6NBhoM3mPGFCtn7
+On7eOvGgkGSv24MNqyDcOSVLHqJTtjTiDyXfEWiMTGewkg4fog3CWgnNzv+AXdxXTI2XArIx9+GT62iD
+rRVbWV9Pra3paZEWl3Y2kyUIWy50zABF54ELrACCVjStVHNp9r5P8NNhZGnp39hI839JuMNHiPUGlp7X
+W0gyHUAMGwV467Qn0S5yxT2I7+BjZ9zcwLF2V+lhCvs2QRY41o6bs1KiMd/ePro60jgoXMQ9Vjin8u3s
+U8jYImNvHcZh4eHygu+nQROduygEPkg4zIO2vjoQ46C5+oalGgkQLWyWRufwFwAA//8DAFBLAwQUAAYA
+CAAAACEAaYogYR0BAADhAgAACwAIAl9yZWxzLy5yZWxzIKIEAiigAAIAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAKySUUvDMBSF3wX/Q8j7mnWKiKzdiwh7E6k/4C657Uqb3JBctfv3ptPpCnMI+pjk
+5OQ752a5GmwvXjHEllwh82wuBTpNpnVNIZ+rh9mtFJHBGejJYSF3GOWqvLxYPmEPnC7FbeujSC4uFnLL
+7O+UinqLFmJGHl06qSlY4LQMjfKgO2hQLebzGxWOPWQ58RRrU8iwNldSVDufXv6Lt7LIYIBBaQo48yGR
+BW5TFlFBaJALaUg/pu24V2SJWqrTQIsfgGyrA0WqOdNkFdV1q8eYeT6Nqd5wgwOjGxtniJ0Hd8wx9BNF
+VF+ac1D571v6ILsn/WLR8YlBfLIfFN8VjWgUug1Rd47l+j9Z9lUZNOdnBt4fiNTkY5bvAAAA//8DAFBL
+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
+AAAAAA0ADQBzAwAAYSQAAAAA
+`
+
+function bytesFromBase64(value) {
+  const binary = atob(value.replace(/\s/g, ''))
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index)
+  return bytes
+}
+
+function buildClassListTemplate() {
+  return bytesFromBase64(CLASS_LIST_TEMPLATE_BASE64)
+}
+
+function columnIndex(ref) {
+  const letters = ref.match(/^[A-Z]+/)[0]
+  let number = 0
+  for (const char of letters) number = number * 26 + char.charCodeAt(0) - 64
+  return number - 1
+}
+
+function elementText(el) {
+  let value = ''
+  for (const child of el.children) {
+    if (child.type === 'text') value += child.text
+    else value += elementText(child)
+  }
+  return value
+}
+
+function sharedStrings(files) {
+  const file = files.get('xl/sharedStrings.xml')
+  if (!file) return []
+  const doc = parseXml(new TextDecoder().decode(file))
+  return descendants(doc.root, 'si').map(elementText)
+}
+
+async function firstSheet(files) {
+  const workbook = parseXml(new TextDecoder().decode(files.get('xl/workbook.xml')))
+  const sheet = descendants(workbook.root, 'sheet')[0]
+  const relId = sheet.attrs.find(attr => attr.local === 'id').value
+  const rels = parseXml(new TextDecoder().decode(files.get('xl/_rels/workbook.xml.rels')))
+  const rel = descendants(rels.root, 'Relationship').find(item => item.attrs.some(attr => attr.local === 'Id' && attr.value === relId))
+  let target = rel.attrs.find(attr => attr.local === 'Target').value
+  target = target.replace(/^\/?xl\//, 'xl/')
+  if (!target.startsWith('xl/')) target = 'xl/' + target.replace(/^\//, '')
+  return files.get(target)
+}
+
+function headerAt(name) {
+  return CLASS_LIST_HEADERS.indexOf(name)
+}
+
+async function parseClassList(buffer) {
+  try {
+    const files = await unzip(buffer)
+    const sheetBytes = await firstSheet(files)
+    if (!sheetBytes) return { ok: false, error: 'This Excel file could not be read.' }
+    const strings = sharedStrings(files)
+    const doc = parseXml(new TextDecoder().decode(sheetBytes))
+    const rows = descendants(doc.root, 'row')
+    const table = rows.map(row => {
+      const values = []
+      for (const cell of row.children.filter(child => child.type === 'element' && child.local === 'c')) {
+        const ref = cell.attrs.find(attr => attr.local === 'r').value
+        const type = cell.attrs.find(attr => attr.local === 't')?.value
+        let value = ''
+        if (type === 's') value = strings[Number(elementText(descendants(cell, 'v')[0] || { children: [] }))] || ''
+        else if (type === 'inlineStr') value = elementText(descendants(cell, 'is')[0] || { children: [] })
+        else value = elementText(descendants(cell, 'v')[0] || { children: [] })
+        values[columnIndex(ref)] = value
+      }
+      return values
+    })
+    const headers = CLASS_LIST_HEADERS.map((_, index) => (table[0]?.[index] || '').trim())
+    if (headers.some((header, index) => header !== CLASS_LIST_HEADERS[index])) {
+      return { ok: false, error: HEADER_ERROR }
+    }
+    const students = new Map()
+    for (let index = 1; index < table.length; index++) {
+      const row = table[index]
+      const cells = CLASS_LIST_HEADERS.map((_, column) => (row[column] || '').trim())
+      if (cells.every(cell => cell === '')) continue
+      const rowNumber = Number(rows[index].attrs.find(attr => attr.local === 'r')?.value || index + 1)
+      const noText = cells[headerAt('No.')]
+      const classNoText = cells[headerAt('Class no.')]
+      if (noText === '') return { ok: false, error: `Row ${rowNumber} has student information but no No.` }
+      if (!/^[1-9]\d*$/.test(noText.replace(/^0+(?=\d)/, ''))) {
+        return { ok: false, error: `Row ${rowNumber} has a No. that is not a whole number of 1 or more.` }
+      }
+      const no = Number(noText)
+      if (students.has(no)) return { ok: false, error: `No. ${no} appears more than once.` }
+      if (classNoText !== '' && !/^\d+$/.test(classNoText)) {
+        return { ok: false, error: `Row ${rowNumber} has a Class no. that is not a whole number.` }
+      }
+      students.set(no, {
+        no,
+        className: cells[headerAt('Class')],
+        classNo: classNoText === '' ? '' : String(Number(classNoText)),
+        chiName: cells[headerAt('Chi Name')],
+        engName: cells[headerAt('Eng Name')],
+        nickname: cells[headerAt('Nickname')]
+      })
+    }
+    return { ok: true, students }
+  } catch {
+    return { ok: false, error: 'This Excel file could not be read.' }
+  }
+}
+
+
+function paragraphText(paragraph) {
+  let text = ''
+  function walk(node) {
+    for (const child of node.children || []) {
+      if (child.type === 'text') continue
+      if (child.ns === WORD_NS && child.local === 't') {
+        text += child.children.filter(item => item.type === 'text').map(item => item.text).join('')
+      } else walk(child)
+    }
+  }
+  walk(paragraph)
+  return text
+}
+
+function isDesk(cell) {
+  const borders = wordChildren(wordChildren(cell, 'tcPr')[0] || { children: [] }, 'tcBorders')[0]
+  if (!borders) return false
+  return ['top', 'left', 'bottom', 'right'].every(side => {
+    const edge = wordChildren(borders, side)[0]
+    if (!edge) return false
+    const value = edge.attrs.find(attr => attr.local === 'val')?.value
+    return value && value !== 'nil'
+  })
+}
+
+function mostCommon(counts) {
+  let best = ''
+  let seen = 0
+  for (const [key, count] of counts) {
+    if (count > seen) {
+      best = key
+      seen = count
+    }
+  }
+  return best
+}
+
+function defaultFaces(stylesXml) {
+  const empty = { cjk: '', latin: '' }
+  if (!stylesXml) return empty
+  const defaults = wordChildren(parseXml(stylesXml).root, 'docDefaults')[0]
+  const fonts = defaults && descendants(defaults, 'rFonts')[0]
+  if (!fonts) return empty
+  return {
+    cjk: wordAttr(fonts, 'eastAsia') || '',
+    latin: wordAttr(fonts, 'ascii') || wordAttr(fonts, 'hAnsi') || ''
+  }
+}
+
+function faceAt(paragraph, offset, script, defaults) {
+  const sources = []
+  const runProps = rPrAt(runsOf(paragraph), offset)
+  if (runProps) sources.push(runProps)
+  const mark = wordChildren(wordChildren(paragraph, 'pPr')[0] || { children: [] }, 'rPr')[0]
+  if (mark) sources.push(mark)
+  let name = ''
+  for (const props of sources) {
+    const fonts = wordChildren(props, 'rFonts')[0]
+    if (!fonts) continue
+    name = script === 'cjk'
+      ? (wordAttr(fonts, 'eastAsia') || '')
+      : (wordAttr(fonts, 'ascii') || wordAttr(fonts, 'hAnsi') || '')
+    if (name) break
+  }
+  if (!name) name = script === 'cjk' ? defaults.cjk : defaults.latin
+  let half = NaN
+  for (const props of sources) {
+    const sz = wordChildren(props, 'sz')[0]
+    half = Number(sz ? wordAttr(sz, 'val') : NaN)
+    if (Number.isFinite(half) && half > 0) break
+  }
+  return { name, pt: Number.isFinite(half) && half > 0 ? half / 2 : 0 }
+}
+
+function deskTypeface(documentXml, stylesXml = '') {
+  const defaults = defaultFaces(stylesXml)
+  const names = { cjk: new Map(), latin: new Map() }
+  const sizes = { cjk: new Map(), latin: new Map() }
+  for (const box of deskBoxes(documentXml)) {
+    for (const paragraph of wordChildren(box, 'p')) {
+      const text = paragraphText(paragraph)
+      for (const token of tokenize(text)) {
+        const script = token.type === 'chiName' ? 'cjk' : 'latin'
+        const face = faceAt(paragraph, token.start, script, defaults)
+        if (face.name) names[script].set(face.name, (names[script].get(face.name) || 0) + 1)
+        if (face.pt) sizes[script].set(String(face.pt), (sizes[script].get(String(face.pt)) || 0) + 1)
+      }
+    }
+  }
+  return {
+    cjk: mostCommon(names.cjk) || defaults.cjk,
+    latin: mostCommon(names.latin) || defaults.latin,
+    cjkPt: Number(mostCommon(sizes.cjk)) || 0,
+    latinPt: Number(mostCommon(sizes.latin)) || 0
+  }
+}
+
+function deskBoxes(documentXml) {
+  const doc = parseXml(documentXml)
+  const body = wordChildren(doc.root, 'body')[0]
+  const table = body ? wordChildren(body, 'tbl')[0] : null
+  if (!table) return []
+  const boxes = []
+  for (const row of wordChildren(table, 'tr')) {
+    for (const cell of wordChildren(row, 'tc')) {
+      if (isDesk(cell)) boxes.push(cell)
+    }
+  }
+  return boxes
+}
+
+function sequenceOf(cell) {
+  const sequence = []
+  for (const paragraph of wordChildren(cell, 'p')) {
+    for (const token of tokenize(paragraphText(paragraph))) sequence.push(token.type)
+  }
+  return sequence
+}
+
+function templatePattern(documentXml) {
+  return choosePattern(deskBoxes(documentXml).map(sequenceOf).filter(sequence => sequence.length > 0))
+}
+
+function runsOf(paragraph) {
+  const runs = []
+  let offset = 0
+  function walk(node) {
+    for (const child of node.children) {
+      if (child.type !== 'element') continue
+      if (child.ns === WORD_NS && child.local === 'r') {
+        const rPr = wordChildren(child, 'rPr')[0] || null
+        for (const textNode of wordChildren(child, 't')) {
+          const text = textNode.children.filter(item => item.type === 'text').map(item => item.text).join('')
+          runs.push({ rPr, start: offset, end: offset + text.length })
+          offset += text.length
+        }
+      } else walk(child)
+    }
+  }
+  walk(paragraph)
+  return runs
+}
+
+function rPrAt(runs, offset) {
+  const run = runs.find(item => offset >= item.start && offset < item.end) || runs[0]
+  return run?.rPr ? cloneNode(run.rPr) : null
+}
+
+const TIMES_WIDTH = {
+  ' ': 250, "'": 180, '-': 333, '.': 250,
+  '0': 500, '1': 500, '2': 500, '3': 500, '4': 500, '5': 500, '6': 500, '7': 500, '8': 500, '9': 500,
+  A: 722, B: 667, C: 667, D: 722, E: 611, F: 556, G: 722, H: 722, I: 333, J: 389,
+  K: 722, L: 611, M: 889, N: 722, O: 722, P: 556, Q: 722, R: 667, S: 556, T: 611,
+  U: 722, V: 722, W: 944, X: 722, Y: 722, Z: 611,
+  a: 444, b: 500, c: 444, d: 500, e: 444, f: 333, g: 500, h: 500, i: 278, j: 278,
+  k: 500, l: 278, m: 778, n: 500, o: 500, p: 500, q: 500, r: 333, s: 389, t: 278,
+  u: 500, v: 500, w: 722, x: 500, y: 500, z: 444
+}
+
+function dxaValue(node, fallback) {
+  if (!node) return fallback
+  if ((wordAttr(node, 'type') || 'dxa') !== 'dxa') return fallback
+  const value = Number(wordAttr(node, 'w'))
+  return Number.isFinite(value) ? value : fallback
+}
+
+function tableSideMargins(table) {
+  const mar = table ? wordChildren(wordChildren(table, 'tblPr')[0] || { children: [] }, 'tblCellMar')[0] : null
+  return {
+    left: dxaValue(mar && wordChildren(mar, 'left')[0], 108),
+    right: dxaValue(mar && wordChildren(mar, 'right')[0], 108)
+  }
+}
+
+function englishLineWidth(cell, margins) {
+  const tcPr = wordChildren(cell, 'tcPr')[0]
+  const tcW = tcPr && wordChildren(tcPr, 'tcW')[0]
+  if (!tcW || (wordAttr(tcW, 'type') || 'dxa') !== 'dxa') return null
+  const total = Number(wordAttr(tcW, 'w'))
+  if (!Number.isFinite(total) || total <= 0) return null
+  const tcMar = wordChildren(tcPr, 'tcMar')[0]
+  const left = dxaValue(tcMar && wordChildren(tcMar, 'left')[0], margins.left)
+  const right = dxaValue(tcMar && wordChildren(tcMar, 'right')[0], margins.right)
+  return Math.max(120, total - left - right - 40)
+}
+
+function latinFont(paragraph) {
+  for (const fonts of descendants(paragraph, 'rFonts')) {
+    const name = wordAttr(fonts, 'ascii') || wordAttr(fonts, 'hAnsi')
+    if (name) return name
+  }
+  return 'Times New Roman'
+}
+
+function textWidthTwips(text, halfPoints, fontName) {
+  const wide = !/times/i.test(fontName || '')
+  let units = 0
+  for (const ch of text) {
+    let width = TIMES_WIDTH[ch]
+    if (width == null) width = ch.codePointAt(0) > 255 ? 1000 : 722
+    if (wide) width = Math.round(width * 1.08)
+    units += width
+  }
+  return units / 100 * halfPoints
+}
+
+function currentHalfPoints(paragraph) {
+  const run = wordChildren(paragraph, 'r')[0]
+  const sz = run && wordChildren(wordChildren(run, 'rPr')[0] || { children: [] }, 'sz')[0]
+  const value = Number(sz ? wordAttr(sz, 'val') : NaN)
+  return Number.isFinite(value) && value > 0 ? value : 22
+}
+
+function ensureSize(rPr, halfPoints) {
+  for (const local of ['sz', 'szCs']) {
+    let node = wordChildren(rPr, local)[0]
+    if (!node) {
+      node = { type: 'element', name: 'w:' + local, local, ns: WORD_NS, attrs: [], children: [], nsMap: {} }
+      rPr.children.push(node)
+    }
+    const attr = node.attrs.find(item => item.local === 'val')
+    if (attr) attr.value = String(halfPoints)
+    else node.attrs.push({ name: 'w:val', local: 'val', ns: WORD_NS, value: String(halfPoints) })
+  }
+}
+
+let fitTextId = 1
+
+function fitEnglishLine(paragraph, widthTwips) {
+  if (!widthTwips) return
+  const text = paragraphText(paragraph)
+  if (!text) return
+  const fontName = latinFont(paragraph)
+  let size = currentHalfPoints(paragraph)
+  if (textWidthTwips(text, size, fontName) <= widthTwips) return
+  while (size > 12 && textWidthTwips(text, size, fontName) > widthTwips) size -= 1
+  const props = []
+  const pPr = wordChildren(paragraph, 'pPr')[0]
+  const mark = pPr && wordChildren(pPr, 'rPr')[0]
+  if (mark) props.push(mark)
+  for (const run of wordChildren(paragraph, 'r')) {
+    let rPr = wordChildren(run, 'rPr')[0]
+    if (!rPr) {
+      rPr = { type: 'element', name: 'w:rPr', local: 'rPr', ns: WORD_NS, attrs: [], children: [], nsMap: {} }
+      run.children.unshift(rPr)
+    }
+    props.push(rPr)
+  }
+  for (const rPr of props) ensureSize(rPr, size)
+  if (textWidthTwips(text, size, fontName) <= widthTwips) return
+  for (const rPr of props) {
+    rPr.children.push({
+      type: 'element', name: 'w:fitText', local: 'fitText', ns: WORD_NS, attrs: [
+        { name: 'w:val', local: 'val', ns: WORD_NS, value: String(Math.round(widthTwips)) },
+        { name: 'w:id', local: 'id', ns: WORD_NS, value: String(fitTextId++) }
+      ], children: [], nsMap: {}
+    })
+  }
+}
+
+function makeRun(rPr, text) {
+  const textNode = {
+    type: 'element', name: 'w:t', local: 't', ns: WORD_NS, attrs: [], children: [{ type: 'text', text }], nsMap: {}
+  }
+  if (/^\s|\s$|\s{2}/.test(text)) {
+    textNode.attrs.push({ name: 'xml:space', local: 'space', ns: 'http://www.w3.org/XML/1998/namespace', value: 'preserve' })
+  }
+  return {
+    type: 'element', name: 'w:r', local: 'r', ns: WORD_NS, attrs: [], nsMap: {},
+    children: rPr ? [rPr, textNode] : [textNode]
+  }
+}
+
+function rewriteParagraph(paragraph, student, pattern) {
+  const text = paragraphText(paragraph)
+  const tokens = tokenize(text)
+  const runs = runsOf(paragraph)
+  const pieces = []
+  let cursor = 0
+  for (const token of tokens) {
+    if (cursor < token.start) pieces.push({ kind: 'gap', start: cursor, end: token.start, text: text.slice(cursor, token.start) })
+    const value = pattern.includes(token.type) ? fieldValue(student, token.type) : ''
+    pieces.push({ kind: 'token', token, text: value, omit: value === '' })
+    cursor = token.end
+  }
+  if (cursor < text.length) pieces.push({ kind: 'gap', start: cursor, end: text.length, text: text.slice(cursor) })
+  const visible = pieces.filter(piece => {
+    if (piece.kind === 'token') return !piece.omit
+    if (!/^[\s]*$/.test(piece.text)) return true
+    const before = [...pieces].reverse().find(item => item.kind === 'token' && item.token.end <= piece.start)
+    const after = pieces.find(item => item.kind === 'token' && item.token.start >= piece.end)
+    return !(before?.omit || after?.omit)
+  })
+  const pPr = wordChildren(paragraph, 'pPr')[0]
+  paragraph.children = pPr ? [pPr] : []
+  for (const piece of visible) {
+    if (!piece.text) continue
+    const offset = piece.kind === 'token' ? piece.token.start : piece.start
+    paragraph.children.push(makeRun(rPrAt(runs, offset), piece.text))
+  }
+  return paragraphText(paragraph) !== ''
+}
+
+function makeParagraph(pPr, rPr, text) {
+  const paragraph = { type: 'element', name: 'w:p', local: 'p', ns: WORD_NS, attrs: [], children: [], nsMap: {} }
+  if (pPr) paragraph.children.push(pPr)
+  paragraph.children.push(makeRun(rPr, text))
+  return paragraph
+}
+
+function captureSamples(boxes) {
+  const samples = new Map()
+  for (const box of boxes) {
+    for (const paragraph of wordChildren(box, 'p')) {
+      const tokens = tokenize(paragraphText(paragraph))
+      if (tokens.length === 1 && !samples.has(tokens[0].type)) samples.set(tokens[0].type, cloneNode(paragraph))
+    }
+  }
+  for (const box of boxes) {
+    for (const paragraph of wordChildren(box, 'p')) {
+      const tokens = tokenize(paragraphText(paragraph))
+      const runs = runsOf(paragraph)
+      for (const token of tokens) {
+        if (samples.has(token.type)) continue
+        const pPr = wordChildren(paragraph, 'pPr')[0]
+        samples.set(token.type, makeParagraph(pPr ? cloneNode(pPr) : null, rPrAt(runs, token.start), token.value))
+      }
+    }
+  }
+  return samples
+}
+
+function sampleWithValue(sample, field, value) {
+  const paragraph = cloneNode(sample)
+  const student = { className: '', classNo: '', chiName: '', engName: '', nickname: '' }
+  if (field === 'class') student.className = value
+  if (field === 'classNo') student.classNo = value
+  if (field === 'chiName') student.chiName = value
+  if (field === 'engName') student.engName = value
+  if (field === 'nickname') student.nickname = value
+  rewriteParagraph(paragraph, student, [field])
+  return paragraph
+}
+
+function writeBox(cell, pattern, student, samples, widthTwips) {
+  const paragraphs = wordChildren(cell, 'p')
+  const located = []
+  for (const paragraph of paragraphs) {
+    for (const token of tokenize(paragraphText(paragraph))) located.push({ type: token.type, paragraph })
+  }
+  const visible = new Set()
+  for (const paragraph of paragraphs) {
+    if (rewriteParagraph(paragraph, student, pattern)) visible.add(paragraph)
+  }
+  const used = new Set()
+  const ordered = []
+  const english = new Set()
+  for (const field of pattern) {
+    const value = fieldValue(student, field)
+    if (!value) continue
+    const found = located.find(item => item.type === field && !used.has(item) && visible.has(item.paragraph))
+    if (found) {
+      used.add(found)
+      if (!ordered.includes(found.paragraph)) ordered.push(found.paragraph)
+      if (field === 'engName') english.add(found.paragraph)
+    } else if (samples.has(field)) {
+      const added = sampleWithValue(samples.get(field), field, value)
+      ordered.push(added)
+      if (field === 'engName') english.add(added)
+    }
+  }
+  const staticChildren = cell.children.filter(child => !(child.type === 'element' && child.ns === WORD_NS && child.local === 'p'))
+  cell.children = [...staticChildren, ...ordered]
+  for (const paragraph of english) fitEnglishLine(paragraph, widthTwips)
+  if (!wordChildren(cell, 'p').length) {
+    cell.children.push({ type: 'element', name: 'w:p', local: 'p', ns: WORD_NS, attrs: [], children: [], nsMap: {} })
+  }
+}
+
+function clearBox(cell) {
+  const first = wordChildren(cell, 'p')[0]
+  const pPr = first ? wordChildren(first, 'pPr')[0] : null
+  cell.children = cell.children.filter(child => !(child.type === 'element' && child.ns === WORD_NS && child.local === 'p'))
+  const paragraph = { type: 'element', name: 'w:p', local: 'p', ns: WORD_NS, attrs: [], children: [], nsMap: {} }
+  if (pPr) paragraph.children.push(cloneNode(pPr))
+  cell.children.push(paragraph)
+}
+
+function fillDocument(documentXml, options) {
+  const doc = parseXml(documentXml)
+  const body = wordChildren(doc.root, 'body')[0]
+  const table = body ? wordChildren(body, 'tbl')[0] : null
+  const boxes = []
+  if (table) {
+    for (const row of wordChildren(table, 'tr')) {
+      for (const cell of wordChildren(row, 'tc')) if (isDesk(cell)) boxes.push(cell)
+    }
+  }
+  const expected = options.rows * options.cols
+  if (boxes.length !== expected) {
+    return {
+      ok: false,
+      error: `This Word file has ${boxes.length} desk boxes, and the page is set to ${options.rows} rows by ${options.cols} columns (${expected} seats).`
+    }
+  }
+  const missing = []
+  for (const row of options.seats) {
+    for (const no of row) if (no != null && !options.students.has(no)) missing.push(no)
+  }
+  if (missing.length === 1) return { ok: false, error: `No. ${missing[0]} is missing from the class list.` }
+  if (missing.length > 1) return { ok: false, error: `No. ${missing.join(', No. ')} are missing from the class list.` }
+  const pattern = choosePattern(boxes.map(sequenceOf).filter(sequence => sequence.length > 0))
+  const occupied = options.seats.some(row => row.some(no => no != null))
+  if (occupied && pattern.length === 0) {
+    return { ok: false, error: 'This Word file has no student text in its desk boxes, so the font and fields cannot be copied.' }
+  }
+  const samples = captureSamples(boxes)
+  const margins = tableSideMargins(table)
+  options.seats.forEach((row, rowIndex) => {
+    row.forEach((no, colIndex) => {
+      const cell = boxes[rowIndex * options.cols + colIndex]
+      if (no == null) clearBox(cell)
+      else writeBox(cell, pattern, options.students.get(no), samples, englishLineWidth(cell, margins))
+    })
+  })
+  return { ok: true, xml: serializeXml(doc) }
+}
+
+
+const SHEET_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
+
+const TEMPLATE_FILE_ERROR = 'This page needs a .docx or .xlsx seating plan.'
+
+function templateFileKind(name) {
+  const lower = String(name || '').toLowerCase()
+  if (lower.endsWith('.docx')) return 'docx'
+  if (lower.endsWith('.xlsx')) return 'xlsx'
+  return ''
+}
+
+function templateStatus(kind, count) {
+  if (kind === 'xlsx') return `Excel template loaded (${count} desk cells).`
+  return `Template loaded (${count} desk boxes).`
+}
+
+function sheetAttr(el, local) {
+  if (!el) return null
+  const found = el.attrs.find(attr => attr.local === local)
+  return found ? found.value : null
+}
+
+function sheetText(el) {
+  if (!el) return ''
+  let value = ''
+  for (const child of el.children) {
+    if (child.type === 'text') value += child.text
+    else value += sheetText(child)
+  }
+  return value
+}
+
+function directKids(el, local) {
+  if (!el) return []
+  return el.children.filter(child => child.type === 'element' && child.local === local)
+}
+
+function columnNumber(letters) {
+  let number = 0
+  for (const char of letters) number = number * 26 + char.charCodeAt(0) - 64
+  return number
+}
+
+function splitRef(ref) {
+  const match = /^\$?([A-Za-z]+)\$?(\d+)$/.exec(String(ref || '').trim())
+  if (!match) return null
+  return { col: columnNumber(match[1].toUpperCase()), row: Number(match[2]) }
+}
+
+function isBoxBorder(border) {
+  return ['left', 'right', 'top', 'bottom'].every(side => {
+    const edge = directKids(border, side)[0]
+    if (!edge) return false
+    const style = sheetAttr(edge, 'style')
+    return !!style && style !== 'none' && style !== 'nil'
+  })
+}
+
+function boxStyleIndexes(stylesXml) {
+  const doc = parseXml(stylesXml)
+  const borders = directKids(directKids(doc.root, 'borders')[0], 'border')
+  const boxed = new Set()
+  borders.forEach((border, index) => {
+    if (isBoxBorder(border)) boxed.add(index)
+  })
+  const styles = new Set()
+  directKids(directKids(doc.root, 'cellXfs')[0], 'xf').forEach((xf, index) => {
+    const apply = sheetAttr(xf, 'applyBorder')
+    if (apply === '0' || apply === 'false') return
+    const borderId = Number(sheetAttr(xf, 'borderId'))
+    if (boxed.has(borderId)) styles.add(index)
+  })
+  return styles
+}
+
+function mergeRanges(doc) {
+  const ranges = []
+  for (const merge of descendants(doc.root, 'mergeCell')) {
+    const [start, end] = (sheetAttr(merge, 'ref') || '').split(':')
+    const a = splitRef(start)
+    const b = splitRef(end || start)
+    if (!a || !b) continue
+    ranges.push({
+      r1: Math.min(a.row, b.row),
+      r2: Math.max(a.row, b.row),
+      c1: Math.min(a.col, b.col),
+      c2: Math.max(a.col, b.col)
+    })
+  }
+  return ranges
+}
+
+function runText(run) {
+  let value = ''
+  for (const node of directKids(run, 't')) value += sheetText(node)
+  return value
+}
+
+function textAndRuns(container) {
+  if (!container) return { text: '', runs: [] }
+  const rich = directKids(container, 'r')
+  if (rich.length) {
+    const runs = []
+    let value = ''
+    for (const run of rich) {
+      const piece = runText(run)
+      runs.push({
+        rPr: directKids(run, 'rPr')[0] || null,
+        start: value.length,
+        end: value.length + piece.length
+      })
+      value += piece
+    }
+    return { text: value, runs }
+  }
+  let value = ''
+  for (const node of directKids(container, 't')) value += sheetText(node)
+  return { text: value, runs: [] }
+}
+
+function valueInfo(cell, strings) {
+  const type = sheetAttr(cell, 't')
+  if (type === 'inlineStr') return textAndRuns(directKids(cell, 'is')[0])
+  if (type === 's') {
+    const index = Number(sheetText(directKids(cell, 'v')[0]))
+    return textAndRuns(strings[index])
+  }
+  return { text: sheetText(directKids(cell, 'v')[0]), runs: [] }
+}
+
+function gridDesks(doc, boxedStyles, strings) {
+  const ranges = mergeRanges(doc)
+  const candidates = []
+  for (const cell of descendants(doc.root, 'c')) {
+    const ref = splitRef(sheetAttr(cell, 'r'))
+    if (!ref) continue
+    if (!boxedStyles.has(Number(sheetAttr(cell, 's') || '0'))) continue
+    const merge = ranges.find(range => ref.row >= range.r1 && ref.row <= range.r2 && ref.col >= range.c1 && ref.col <= range.c2)
+    if (merge && (merge.c1 !== merge.c2 || ref.row !== merge.r1 || ref.col !== merge.c1)) continue
+    const info = valueInfo(cell, strings)
+    candidates.push({ cell, row: ref.row, col: ref.col, text: info.text, runs: info.runs })
+  }
+  const byRow = new Map()
+  for (const item of candidates) {
+    if (!byRow.has(item.row)) byRow.set(item.row, [])
+    byRow.get(item.row).push(item)
+  }
+  const groups = []
+  for (const [row, items] of byRow) {
+    items.sort((a, b) => a.col - b.col)
+    groups.push({ row, key: items.map(item => item.col).join(','), cols: items.map(item => item.col), items })
+  }
+  if (!groups.length) return []
+  const tally = new Map()
+  for (const group of groups) {
+    if (!tally.has(group.key)) tally.set(group.key, { key: group.key, count: 0, cols: group.cols, row: group.row })
+    const bucket = tally.get(group.key)
+    bucket.count++
+    if (group.row < bucket.row) bucket.row = group.row
+  }
+  let best = null
+  for (const bucket of tally.values()) {
+    if (
+      !best ||
+      bucket.count > best.count ||
+      (bucket.count === best.count && bucket.cols.length > best.cols.length) ||
+      (bucket.count === best.count && bucket.cols.length === best.cols.length && bucket.row < best.row)
+    ) best = bucket
+  }
+  return groups.filter(group => group.key === best.key).sort((a, b) => a.row - b.row).flatMap(group => group.items)
+}
+
+function mustDecode(files, name) {
+  const data = files.get(name)
+  if (!data) throw new Error('Missing ' + name)
+  return new TextDecoder().decode(data)
+}
+
+function excelTarget(target) {
+  let path = String(target || '').replace(/^\/?xl\//, 'xl/')
+  if (!path.startsWith('xl/')) path = 'xl/' + path.replace(/^\//, '')
+  return path
+}
+
+function worksheetPaths(files) {
+  const workbook = parseXml(mustDecode(files, 'xl/workbook.xml'))
+  const rels = parseXml(mustDecode(files, 'xl/_rels/workbook.xml.rels'))
+  const byId = new Map()
+  for (const rel of descendants(rels.root, 'Relationship')) byId.set(sheetAttr(rel, 'Id'), rel)
+  const paths = []
+  for (const sheet of descendants(workbook.root, 'sheet')) {
+    const rel = byId.get(sheetAttr(sheet, 'id'))
+    if (!rel) continue
+    const type = sheetAttr(rel, 'Type') || ''
+    if (!type.endsWith('/worksheet')) continue
+    paths.push(excelTarget(sheetAttr(rel, 'Target')))
+  }
+  return paths
+}
+
+function stringNodes(xml) {
+  if (!xml) return []
+  return descendants(parseXml(xml).root, 'si')
+}
+
+function prepareGrid(files) {
+  const boxed = boxStyleIndexes(mustDecode(files, 'xl/styles.xml'))
+  const shared = files.get('xl/sharedStrings.xml')
+  const strings = stringNodes(shared ? new TextDecoder().decode(shared) : '')
+  let best = null
+  for (const path of worksheetPaths(files)) {
+    const doc = parseXml(mustDecode(files, path))
+    const desks = gridDesks(doc, boxed, strings)
+    if (!best || desks.length > best.desks.length) best = { path, doc, desks }
+  }
+  if (!best) throw new Error('This Excel file could not be read.')
+  return best
+}
+
+function gapSeparator(value) {
+  const tokens = tokenize(value)
+  if (tokens.length < 2) return null
+  return value.slice(tokens[0].end, tokens[1].start)
+}
+
+function commonSeparator(desks) {
+  const counts = new Map()
+  for (const desk of desks) {
+    const gap = gapSeparator(desk.text)
+    if (gap == null) continue
+    counts.set(gap, (counts.get(gap) || 0) + 1)
+  }
+  let best = '\n'
+  let bestCount = -1
+  for (const [gap, count] of counts) {
+    if (count > bestCount) {
+      best = gap
+      bestCount = count
+    }
+  }
+  return best
+}
+
+function rPrFor(desk, token) {
+  if (!desk.runs.length) return null
+  const run = desk.runs.find(item => token && token.start >= item.start && token.start < item.end) || desk.runs[desk.runs.length - 1]
+  return run?.rPr ? cloneNode(run.rPr) : null
+}
+
+function fieldParts(desk, student, pattern, fallback) {
+  const tokens = tokenize(desk.text)
+  const parts = []
+  for (const field of pattern) {
+    const value = fieldValue(student, field)
+    if (!value) continue
+    parts.push({ value, rPr: rPrFor(desk, tokens.find(item => item.type === field)) })
+  }
+  return { parts, separator: gapSeparator(desk.text) || fallback }
+}
+
+function sheetNode(local, attrs, children) {
+  return { type: 'element', name: local, local, ns: SHEET_NS, attrs, children, nsMap: {} }
+}
+
+function textNode(value) {
+  const attrs = []
+  if (/^\s|\s$|\s{2}|\n/.test(value)) {
+    attrs.push({ name: 'xml:space', local: 'space', ns: 'http://www.w3.org/XML/1998/namespace', value: 'preserve' })
+  }
+  return sheetNode('t', attrs, [{ type: 'text', text: value }])
+}
+
+function writeDeskText(cell, parts, separator) {
+  const kept = cell.children.filter(child => child.type !== 'element' || !['v', 'is', 'f'].includes(child.local))
+  if (!parts.length) {
+    cell.attrs = cell.attrs.filter(attr => attr.local !== 't')
+    cell.children = kept
+    return
+  }
+  const type = cell.attrs.find(attr => attr.local === 't')
+  if (type) type.value = 'inlineStr'
+  else cell.attrs.push({ name: 't', local: 't', ns: '', value: 'inlineStr' })
+  const rich = parts.some(part => part.rPr)
+  const inline = rich
+    ? parts.map((part, index) => {
+      const children = []
+      if (part.rPr) children.push(part.rPr)
+      children.push(textNode(index === 0 ? part.value : separator + part.value))
+      return sheetNode('r', [], children)
+    })
+    : [textNode(parts.map(part => part.value).join(separator))]
+  cell.children = [...kept.filter(child => child.type === 'element'), sheetNode('is', [], inline)]
+}
+
+function applySeats(prepared, options) {
+  const desks = prepared.desks
+  const expected = options.rows * options.cols
+  if (desks.length !== expected) {
+    return {
+      ok: false,
+      error: `This Excel file has ${desks.length} desk cells, and the page is set to ${options.rows} rows by ${options.cols} columns (${expected} seats).`
+    }
+  }
+  const missing = []
+  for (const row of options.seats) {
+    for (const no of row) if (no != null && !options.students.has(no)) missing.push(no)
+  }
+  if (missing.length === 1) return { ok: false, error: `No. ${missing[0]} is missing from the class list.` }
+  if (missing.length > 1) return { ok: false, error: `No. ${missing.join(', No. ')} are missing from the class list.` }
+  const pattern = choosePattern(desks.map(desk => tokenize(desk.text).map(token => token.type)).filter(sequence => sequence.length > 0))
+  const occupied = options.seats.some(row => row.some(no => no != null))
+  if (occupied && pattern.length === 0) {
+    return { ok: false, error: 'This Excel file has no student text in its desk cells, so the fields cannot be copied.' }
+  }
+  const fallback = commonSeparator(desks)
+  options.seats.forEach((row, rowIndex) => {
+    row.forEach((no, colIndex) => {
+      const desk = desks[rowIndex * options.cols + colIndex]
+      if (no == null) writeDeskText(desk.cell, [], fallback)
+      else {
+        const written = fieldParts(desk, options.students.get(no), pattern, fallback)
+        writeDeskText(desk.cell, written.parts, written.separator)
+      }
+    })
+  })
+  return { ok: true, xml: serializeXml(prepared.doc) }
+}
+
+function mostCommonFace(counts) {
+  let best = ''
+  let seen = 0
+  for (const [key, count] of counts) {
+    if (count > seen) {
+      best = key
+      seen = count
+    }
+  }
+  return best
+}
+
+function styleFaces(stylesXml) {
+  const doc = parseXml(stylesXml)
+  const fonts = directKids(directKids(doc.root, 'fonts')[0], 'font').map(font => {
+    const name = sheetAttr(directKids(font, 'name')[0], 'val') || ''
+    const pt = Number(sheetAttr(directKids(font, 'sz')[0], 'val'))
+    return { name, pt: Number.isFinite(pt) ? pt : 0 }
+  })
+  const ids = directKids(directKids(doc.root, 'cellXfs')[0], 'xf').map(xf => Number(sheetAttr(xf, 'fontId') || 0))
+  return { fonts, ids }
+}
+
+function excelRunFace(rPr) {
+  if (!rPr) return { name: '', pt: 0 }
+  const name = sheetAttr(directKids(rPr, 'rFont')[0], 'val') || ''
+  const pt = Number(sheetAttr(directKids(rPr, 'sz')[0], 'val'))
+  return { name, pt: Number.isFinite(pt) ? pt : 0 }
+}
+
+async function excelTypeface(buffer) {
+  const files = await unzip(buffer)
+  const styles = styleFaces(mustDecode(files, 'xl/styles.xml'))
+  const names = { cjk: new Map(), latin: new Map() }
+  const sizes = { cjk: new Map(), latin: new Map() }
+  for (const desk of prepareGrid(files).desks) {
+    const styleIndex = Number(sheetAttr(desk.cell, 's') || 0)
+    const cellFace = styles.fonts[styles.ids[styleIndex]] || styles.fonts[0] || { name: '', pt: 0 }
+    for (const token of tokenize(desk.text)) {
+      const script = token.type === 'chiName' ? 'cjk' : 'latin'
+      let face = cellFace
+      if (desk.runs.length) {
+        const run = desk.runs.find(item => token.start >= item.start && token.start < item.end)
+        const rich = excelRunFace(run && run.rPr)
+        face = { name: rich.name || cellFace.name, pt: rich.pt || cellFace.pt }
+      }
+      if (face.name) names[script].set(face.name, (names[script].get(face.name) || 0) + 1)
+      if (face.pt) sizes[script].set(String(face.pt), (sizes[script].get(String(face.pt)) || 0) + 1)
+    }
+  }
+  return {
+    cjk: mostCommonFace(names.cjk),
+    latin: mostCommonFace(names.latin),
+    cjkPt: Number(mostCommonFace(sizes.cjk)) || 0,
+    latinPt: Number(mostCommonFace(sizes.latin)) || 0
+  }
+}
+
+async function countExcelDesks(buffer) {
+  const files = await unzip(buffer)
+  return prepareGrid(files).desks.length
+}
+
+async function fillExcelTemplate(buffer, options) {
+  let prepared
+  try {
+    prepared = prepareGrid(await unzip(buffer))
+  } catch {
+    return { ok: false, error: 'This Excel file could not be read.' }
+  }
+  const result = applySeats(prepared, options)
+  if (!result.ok) return result
+  return {
+    ok: true,
+    bytes: replaceZipEntry(buffer, prepared.path, new TextEncoder().encode(result.xml))
+  }
+}
+
+/* MODULES:END */
+        let classList = null;
+        let classListBytes = null;
+        let classListName = null;
+        let wordTemplate = null;
+        let templateKind = null;
+        let templateName = null;
+        const REMEMBER_KEY = 'seating-plan-remember';
+        const RULE_IDS = ['rows', 'cols', 'students', 'tall', 'short', 'naughty', 'restrictions', 'together'];
+        let restoring = false;
+
+        function bytesToBase64(bytes) {
+            const parts = [];
+            for (let i = 0; i < bytes.length; i += 0x8000) {
+                parts.push(String.fromCharCode(...bytes.subarray(i, i + 0x8000)));
+            }
+            return btoa(parts.join(''));
+        }
+
+        function base64ToBytes(text) {
+            const binary = atob(text);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return bytes;
+        }
+
+        function showRememberedUpload(input, bytes, name) {
+            const file = new File([bytes], name);
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            input.files = transfer.files;
+        }
+
+        function rememberState() {
+            if (restoring) return;
+            try {
+                const rules = {};
+                for (const id of RULE_IDS) rules[id] = document.getElementById(id).value;
+                localStorage.setItem(REMEMBER_KEY, JSON.stringify({
+                    rules,
+                    classList: classListBytes ? bytesToBase64(classListBytes) : null,
+                    classListName,
+                    template: wordTemplate ? bytesToBase64(wordTemplate) : null,
+                    templateKind,
+                    templateName
+                }));
+            } catch { /* the page still works if the browser cannot store it */ }
+        }
+
+        function forgetState() {
+            try { localStorage.removeItem(REMEMBER_KEY); } catch { /* already clear */ }
+        }
+        let seatTypeface = null;
+        let lastSeats = null;
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function downloadBlob(bytes, name, type) {
+            const blob = new Blob([bytes], { type });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function getTopRowDeskOrder(numDesks) {
+            if (numDesks <= 1) {
+                return [...Array(numDesks).keys()];
+            }
+            if (numDesks === 2) {
+                return [1, 0];
+            }
+            const leftCount = Math.floor(numDesks / 3);
+            const rightCount = Math.floor(numDesks / 3);
+            const middleCount = numDesks - leftCount - rightCount;
+            const middle = [];
+            for (let i = 0; i < middleCount; i++) {
+                middle.push(leftCount + i);
+            }
+            const right = [];
+            for (let i = 0; i < rightCount; i++) {
+                right.push(leftCount + middleCount + i);
+            }
+            const left = [];
+            for (let i = leftCount - 1; i >= 0; i--) {
+                left.push(i);
+            }
+            return [...middle, ...right, ...left];
+        }
+
+        function getColumnPackRank(row, col, cols) {
+            const order = getTopRowDeskOrder(Math.ceil(cols / 2));
+            const desk = Math.floor(col / 2);
+            const deskRank = order.indexOf(desk);
+            return deskRank * 2 + (col % 2);
+        }
+
+        function pairPartnerCol(col, cols) {
+            const partner = col % 2 === 0 ? col + 1 : col - 1;
+            if (partner < 0 || partner >= cols) {
+                return null;
+            }
+            return partner;
+        }
+
+        function isPartnerTaken(row, col, cols, availableSeats) {
+            const partner = pairPartnerCol(col, cols);
+            if (partner === null) {
+                return false;
+            }
+            return !availableSeats.some(([r, c]) => r === row && c === partner);
+        }
+
+        function pairPlacementHeight(height1, height2, rows) {
+            if ((height1 === 'tall' && height2 === 'short') || (height1 === 'short' && height2 === 'tall')) {
+                return rows % 2 === 1 ? 'mixed' : 'short';
+            }
+            if (height1 === 'short' || height2 === 'short') {
+                return 'short';
+            }
+            if (height1 === 'tall' || height2 === 'tall') {
+                return 'tall';
+            }
+            return 'medium';
+        }
+
+        function comparePackedSeats(a, b, cols, frontRow, availableSeats) {
+            const rowDiff = (frontRow - a[0]) - (frontRow - b[0]);
+            if (rowDiff !== 0) {
+                return rowDiff;
+            }
+            const pairA = isPartnerTaken(a[0], a[1], cols, availableSeats) ? 0 : 1;
+            const pairB = isPartnerTaken(b[0], b[1], cols, availableSeats) ? 0 : 1;
+            if (pairA !== pairB) {
+                return pairA - pairB;
+            }
+            return getColumnPackRank(a[0], a[1], cols) - getColumnPackRank(b[0], b[1], cols);
+        }
+
+        function seatFaceCss(label) {
+            if (!seatTypeface || !label) return '';
+            const cjk = /[\u3400-\u9fff]/.test(label);
+            const name = cjk ? seatTypeface.cjk : seatTypeface.latin;
+            const pt = cjk ? seatTypeface.cjkPt : seatTypeface.latinPt;
+            if (!name && !pt) return '';
+            const family = name ? `font-family:'${String(name).replace(/'/g, '')}',sans-serif;` : '';
+            const size = pt ? `font-size:${pt}pt;` : '';
+            return family + size;
+        }
+
+        function seatFaceAttr(label) {
+            const css = seatFaceCss(label);
+            return css ? ` style="${css}"` : '';
+        }
+
+        function paintSeatFonts() {
+            const table = document.querySelector('#container table');
+            if (!table) return;
+            table.classList.toggle('template-font', !!seatTypeface);
+            for (const cell of table.querySelectorAll('td')) {
+                cell.style.cssText = seatFaceCss(cell.textContent || '');
+                fitLatinLabel(cell);
+            }
+        }
+
+        function fitLatinLabel(cell) {
+            const label = cell.textContent || '';
+            if (!label || /[\u3400-\u9fff]/.test(label)) {
+                if (cell.style.whiteSpace === 'nowrap') cell.style.whiteSpace = '';
+                return;
+            }
+            cell.style.whiteSpace = 'nowrap';
+            const probe = fitLatinLabel.context || (fitLatinLabel.context = document.createElement('canvas').getContext('2d'));
+            const style = getComputedStyle(cell);
+            const family = style.fontFamily;
+            const weight = style.fontWeight;
+            let size = parseFloat(style.fontSize);
+            const available = cell.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+            if (!Number.isFinite(size) || size <= 0 || available <= 8) return;
+            while (size > 8) {
+                probe.font = `${weight} ${size}px ${family}`;
+                if (probe.measureText(label).width <= available) break;
+                size -= 0.5;
+            }
+            cell.style.fontSize = `${size}px`;
+        }
+
+        let draggedSeat = null;
+
+        function heightOfCell(cell) {
+            return ['tall', 'medium', 'short'].find(name => cell.classList.contains(name)) || '';
+        }
+
+        function eventElement(target) {
+            if (!target) return null;
+            return target.nodeType === 1 ? target : target.parentElement;
+        }
+
+        function prepareSeatDragging() {
+            const zone = document.getElementById('unseated-drop');
+            zone.replaceChildren();
+            zone.hidden = false;
+            const table = document.querySelector('#container table');
+            if (!table || !lastSeats) return;
+            for (let r = 0; r < lastSeats.rows; r++) {
+                for (let c = 0; c < lastSeats.cols; c++) {
+                    table.rows[r].cells[c].draggable = lastSeats.seats[r][c] != null;
+                }
+            }
+        }
+
+        function clearSeatCell(cell) {
+            cell.textContent = '';
+            cell.classList.remove('tall', 'medium', 'short', 'is-dragging', 'seat-drop-target');
+            cell.style.cssText = '';
+            cell.draggable = false;
+        }
+
+        function writeSeatCell(cell, student) {
+            cell.textContent = student.label;
+            cell.classList.remove('tall', 'medium', 'short');
+            if (student.height) cell.classList.add(student.height);
+            cell.style.cssText = student.face || '';
+            cell.draggable = true;
+            fitLatinLabel(cell);
+        }
+
+        function studentFromCell(cell) {
+            const row = cell.parentElement.rowIndex;
+            const col = cell.cellIndex;
+            const studentNo = lastSeats && lastSeats.seats[row] ? lastSeats.seats[row][col] : null;
+            if (studentNo == null) return null;
+            return {
+                from: 'seat',
+                row,
+                col,
+                cell,
+                studentNo,
+                label: cell.textContent,
+                height: heightOfCell(cell),
+                face: cell.style.cssText,
+                weight: getComputedStyle(cell).fontWeight
+            };
+        }
+
+        function studentFromChip(chip) {
+            return {
+                from: 'zone',
+                chip,
+                studentNo: parseInt(chip.dataset.student, 10),
+                label: chip.textContent,
+                height: chip.dataset.height || '',
+                face: chip.dataset.faceStyle || '',
+                weight: chip.style.fontWeight || getComputedStyle(chip).fontWeight
+            };
+        }
+
+        function chipForStudent(student) {
+            const chip = document.createElement('span');
+            chip.className = 'seat-chip' + (student.height ? ' ' + student.height : '');
+            chip.draggable = true;
+            chip.dataset.student = String(student.studentNo);
+            chip.dataset.height = student.height || '';
+            chip.dataset.faceStyle = student.face || '';
+            chip.textContent = student.label;
+            chip.style.cssText = student.face || '';
+            if (student.weight) chip.style.fontWeight = student.weight;
+            return chip;
+        }
+
+        function seatIsEmpty(cell) {
+            if (!lastSeats || !cell || !cell.closest('#container')) return false;
+            const row = cell.parentElement.rowIndex;
+            const col = cell.cellIndex;
+            return lastSeats.seats[row][col] == null;
+        }
+
+        function markDropTarget(element) {
+            document.querySelectorAll('.seat-drop-target').forEach(node => {
+                if (node !== element) node.classList.remove('seat-drop-target');
+            });
+            if (element) element.classList.add('seat-drop-target');
+        }
+
+        function releaseDraggedSeat(student, nextCell) {
+            if (!student || !Number.isInteger(student.studentNo)) return false;
+            if (student.from === 'seat') {
+                if (student.cell === nextCell) return false;
+                clearSeatCell(student.cell);
+                lastSeats.seats[student.row][student.col] = null;
+            } else if (student.chip) {
+                student.chip.remove();
+            }
+            return true;
+        }
+
+        function bindSeatDragging() {
+            const zone = document.getElementById('unseated-drop');
+            const container = document.getElementById('container');
+
+            container.addEventListener('dragstart', (event) => {
+                const origin = eventElement(event.target);
+                const cell = origin && origin.closest('td');
+                if (!cell || !container.contains(cell)) return;
+                const student = studentFromCell(cell);
+                if (!student) {
+                    event.preventDefault();
+                    return;
+                }
+                draggedSeat = student;
+                cell.classList.add('is-dragging');
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', String(student.studentNo));
+            });
+
+            zone.addEventListener('dragstart', (event) => {
+                const origin = eventElement(event.target);
+                const chip = origin && origin.closest('.seat-chip');
+                if (!chip) return;
+                draggedSeat = studentFromChip(chip);
+                chip.classList.add('is-dragging');
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', String(draggedSeat.studentNo));
+            });
+
+            document.addEventListener('dragend', () => {
+                if (draggedSeat && draggedSeat.cell) draggedSeat.cell.classList.remove('is-dragging');
+                if (draggedSeat && draggedSeat.chip) draggedSeat.chip.classList.remove('is-dragging');
+                draggedSeat = null;
+                markDropTarget(null);
+            });
+
+            function swapOntoSeat(student, cell) {
+                const other = studentFromCell(cell);
+                if (!other || other.studentNo === student.studentNo) return;
+                if (student.from === 'seat') {
+                    writeSeatCell(student.cell, other);
+                    writeSeatCell(cell, student);
+                    lastSeats.seats[student.row][student.col] = other.studentNo;
+                    lastSeats.seats[other.row][other.col] = student.studentNo;
+                } else {
+                    if (student.chip) student.chip.remove();
+                    writeSeatCell(cell, student);
+                    lastSeats.seats[other.row][other.col] = student.studentNo;
+                    zone.appendChild(chipForStudent(other));
+                }
+            }
+
+            container.addEventListener('dragover', (event) => {
+                if (!draggedSeat) return;
+                const origin = eventElement(event.target);
+                const cell = origin && origin.closest('td');
+                if (!cell || !container.contains(cell) || cell === draggedSeat.cell) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                markDropTarget(cell);
+            });
+
+            container.addEventListener('drop', (event) => {
+                if (!draggedSeat) return;
+                const origin = eventElement(event.target);
+                const cell = origin && origin.closest('td');
+                if (!cell || !container.contains(cell) || cell === draggedSeat.cell) return;
+                event.preventDefault();
+                const student = draggedSeat;
+                if (seatIsEmpty(cell)) {
+                    if (!releaseDraggedSeat(student, cell)) return;
+                    writeSeatCell(cell, student);
+                    lastSeats.seats[cell.parentElement.rowIndex][cell.cellIndex] = student.studentNo;
+                } else {
+                    swapOntoSeat(student, cell);
+                }
+                markDropTarget(null);
+            });
+
+            zone.addEventListener('dragover', (event) => {
+                if (!draggedSeat || draggedSeat.from !== 'seat') return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                markDropTarget(zone);
+            });
+
+            zone.addEventListener('drop', (event) => {
+                if (!draggedSeat || draggedSeat.from !== 'seat') return;
+                event.preventDefault();
+                const student = draggedSeat;
+                if (!releaseDraggedSeat(student, null)) return;
+                zone.appendChild(chipForStudent(student));
+                markDropTarget(null);
+            });
+        }
+
+        function generatePlan() {
+            const rows = parseInt(document.getElementById('rows').value, 10);
+            const cols = parseInt(document.getElementById('cols').value, 10);
+            const totalStudents = parseInt(document.getElementById('students').value, 10);
+
+            if (![rows, cols, totalStudents].every(n => Number.isInteger(n) && n >= 1)) {
+                alert('Rows, columns, and total number of students must be whole numbers of at least 1.');
+                return;
+            }
+
+            const mentionedNumbers = ['tall', 'short', 'naughty', 'restrictions', 'together'].flatMap(id =>
+                document.getElementById(id).value.split(/[^0-9]+/)
+                    .filter(part => part !== '')
+                    .map(part => parseInt(part, 10))
+                    .filter(num => Number.isInteger(num) && num >= 1)
+            );
+            if (mentionedNumbers.length > 0) {
+                const largestNumber = Math.max(...mentionedNumbers);
+                if (largestNumber > totalStudents) {
+                    const proceed = confirm(`The largest student number (${largestNumber}) is greater than the total number of students (${totalStudents}). Numbers outside 1 to ${totalStudents} will be ignored. Continue?`);
+                    if (!proceed) {
+                        return;
+                    }
+                }
+            }
+
+            const parseClassNumbers = (id) => [...new Set(
+                document.getElementById(id).value.split(',')
+                    .map(s => parseInt(s.trim(), 10))
+                    .filter(num => Number.isInteger(num) && num >= 1 && num <= totalStudents)
+            )];
+            const parsePairs = (id) => document.getElementById(id).value.split(',')
+                .map(pair => pair.trim())
+                .filter(pair => pair !== '')
+                .map(pair => pair.split('-').map(s => parseInt(s.trim(), 10)))
+                .filter(pair => pair.length === 2
+                    && Number.isInteger(pair[0]) && Number.isInteger(pair[1])
+                    && pair[0] >= 1 && pair[0] <= totalStudents
+                    && pair[1] >= 1 && pair[1] <= totalStudents);
+
+            const tallStudents = parseClassNumbers('tall');
+            const shortStudents = parseClassNumbers('short');
+            const naughtyStudents = parseClassNumbers('naughty');
+            const mediumStudents = [];
+            for (let n = 1; n <= totalStudents; n++) {
+                if (!tallStudents.includes(n) && !shortStudents.includes(n)) {
+                    mediumStudents.push(n);
+                }
+            }
+            const restrictions = parsePairs('restrictions');
+            const together = parsePairs('together');
+            const frontRow = rows - 1;
+            const middleRow = rows % 2 === 1 ? Math.floor(rows / 2) : null;
+            const packTowardBlackboard = totalStudents < rows * cols;
+
+            if (totalStudents > rows * cols) {
+                alert('Total number of students exceed the classroom capacity.');
+                return;
+            }
+
+            if (tallStudents.some(n => shortStudents.includes(n))) {
+                alert('A student cannot be listed as both tall and short.');
+                return;
+            }
+
+            if (naughtyStudents.length > Math.ceil(cols / 2)) {
+                alert('Too many naughty students to seat them apart in the first row (nearest to the blackboard).');
+                return;
+            }
+
+            const pairedStudents = new Set();
+            for (const [a, b] of together) {
+                if (a === b) {
+                    alert('A student cannot be paired with themselves.');
+                    return;
+                }
+                if (pairedStudents.has(a) || pairedStudents.has(b)) {
+                    alert('A student cannot appear in more than one “Pair Up Students” pair.');
+                    return;
+                }
+                if (naughtyStudents.includes(a) && naughtyStudents.includes(b)) {
+                    alert('Naughty students must sit separately, so they cannot be paired up.');
+                    return;
+                }
+                pairedStudents.add(a);
+                pairedStudents.add(b);
+            }
+
+            for (const [together1, together2] of together) {
+                if (restrictions.some(([restricted1, restricted2]) =>
+                    (restricted1 === together1 && restricted2 === together2) ||
+                    (restricted1 === together2 && restricted2 === together1))) {
+                    alert('Input in “Separate Students” contradicts that in “Pair Up Students”.');
+                    return;
+                }
+            }
+
+            for (let i = 0; i < naughtyStudents.length; i++) {
+                for (let j = i + 1; j < naughtyStudents.length; j++) {
+                    restrictions.push([naughtyStudents[i], naughtyStudents[j]]);
+                }
+            }
+
+            const plan = [];
+            let availableSeats = [];
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    availableSeats.push([i, j]);
+                }
+            }
+
+            const assignedSeats = {};
+            const shuffleArray = (array) => {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            };
+
+            function seatAllowedForHeight(row, height, forceFrontRow, allowMiddle = false) {
+                if (forceFrontRow) {
+                    return row === frontRow;
+                }
+                if (height === 'mixed') {
+                    return middleRow !== null && row === middleRow;
+                }
+                if (height === 'medium') {
+                    return true;
+                }
+                if (middleRow !== null) {
+                    if (height === 'tall') {
+                        return row < middleRow || (allowMiddle && row === middleRow);
+                    }
+                    if (height === 'short') {
+                        return row > middleRow || (allowMiddle && row === middleRow);
+                    }
+                }
+                const frontHalfRows = Math.ceil(rows / 2);
+                return (height === 'tall' && row < frontHalfRows) || (height === 'short' && row >= frontHalfRows);
+            }
+
+            function getOrderedCandidates(height, forceFrontRow, spreadApart = false, allowMiddle = false) {
+                const candidates = availableSeats.filter(([row]) => seatAllowedForHeight(row, height, forceFrontRow, allowMiddle));
+                if (spreadApart) {
+                    return candidates.slice().sort((a, b) => {
+                        const evenA = a[1] % 2;
+                        const evenB = b[1] % 2;
+                        if (evenA !== evenB) {
+                            return evenA - evenB;
+                        }
+                        return a[1] - b[1];
+                    });
+                }
+                if (height === 'short' || height === 'tall' || height === 'mixed') {
+                    return shuffleArray(candidates.slice());
+                }
+                if (packTowardBlackboard) {
+                    return candidates.slice().sort((a, b) => comparePackedSeats(a, b, cols, frontRow, availableSeats));
+                }
+                return shuffleArray(candidates.slice());
+            }
+
+            function takeCandidate(student, candidates) {
+                for (const [row, col] of candidates) {
+                    const seatIndex = availableSeats.findIndex(seat => seat[0] === row && seat[1] === col);
+                    if (seatIndex === -1) {
+                        continue;
+                    }
+                    if (isSeatValid(student, row, col, assignedSeats, restrictions)) {
+                        assignedSeats[student] = [row, col];
+                        availableSeats.splice(seatIndex, 1);
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function assignStudent(student, height, forceFrontRow = false, spreadApart = false) {
+                if (takeCandidate(student, getOrderedCandidates(height, forceFrontRow, spreadApart, false))) {
+                    return true;
+                }
+                if (!forceFrontRow && middleRow !== null && (height === 'tall' || height === 'short')) {
+                    return takeCandidate(student, getOrderedCandidates(height, false, spreadApart, true));
+                }
+                return false;
+            }
+
+            function assignPair(student1, student2, height1, height2, forceFrontRow = false) {
+                const pairHeight = pairPlacementHeight(height1, height2, rows);
+                const allowMiddleLater = !forceFrontRow && middleRow !== null && (pairHeight === 'tall' || pairHeight === 'short');
+                const candidates = getOrderedCandidates(pairHeight, forceFrontRow, false, false);
+                for (const [row, col] of candidates) {
+                    const col2 = pairPartnerCol(col, cols);
+                    if (col2 === null) {
+                        continue;
+                    }
+                    if (isSeatValid(student1, row, col, assignedSeats, restrictions) &&
+                        availableSeats.some(seat => seat[0] === row && seat[1] === col2) &&
+                        isSeatValid(student2, row, col2, assignedSeats, restrictions)) {
+                        assignedSeats[student1] = [row, col];
+                        assignedSeats[student2] = [row, col2];
+                        availableSeats = availableSeats.filter(seat => !(seat[0] === row && (seat[1] === col || seat[1] === col2)));
+                        return true;
+                    }
+                }
+                if (!allowMiddleLater) {
+                    return false;
+                }
+                for (const [row, col] of getOrderedCandidates(pairHeight, false, false, true)) {
+                    if (row !== middleRow) {
+                        continue;
+                    }
+                    const col2 = pairPartnerCol(col, cols);
+                    if (col2 === null) {
+                        continue;
+                    }
+                    if (isSeatValid(student1, row, col, assignedSeats, restrictions) &&
+                        availableSeats.some(seat => seat[0] === row && seat[1] === col2) &&
+                        isSeatValid(student2, row, col2, assignedSeats, restrictions)) {
+                        assignedSeats[student1] = [row, col];
+                        assignedSeats[student2] = [row, col2];
+                        availableSeats = availableSeats.filter(seat => !(seat[0] === row && (seat[1] === col || seat[1] === col2)));
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            const getHeight = (student) => tallStudents.includes(student) ? 'tall' : shortStudents.includes(student) ? 'short' : 'medium';
+            const isNaughty = (student) => naughtyStudents.includes(student);
+            const isMixedPair = (student1, student2) => {
+                if (middleRow === null || isNaughty(student1) || isNaughty(student2)) {
+                    return false;
+                }
+                const height1 = getHeight(student1);
+                const height2 = getHeight(student2);
+                return (height1 === 'tall' && height2 === 'short') || (height1 === 'short' && height2 === 'tall');
+            };
+            const isShortPair = (student1, student2) => !isNaughty(student1) && !isNaughty(student2) && !isMixedPair(student1, student2)
+                && (getHeight(student1) === 'short' || getHeight(student2) === 'short');
+
+            function placePair(student1, student2) {
+                const height1 = getHeight(student1);
+                const height2 = getHeight(student2);
+                const forceFrontRow = isNaughty(student1) || isNaughty(student2);
+                if (!assignPair(student1, student2, height1, height2, forceFrontRow)) {
+                    alert(`Unable to place the pair ${student1} and ${student2} with the given restrictions.`);
+                    return false;
+                }
+                return true;
+            }
+
+            function placePairs(predicate) {
+                for (const [student1, student2] of together) {
+                    if (predicate(student1, student2) && !placePair(student1, student2)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            function placeIndividuals(students, height) {
+                for (const student of shuffleArray(students.slice())) {
+                    if (!assignedSeats[student] && !assignStudent(student, height)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            if (!placePairs((student1, student2) => isNaughty(student1) || isNaughty(student2))) {
+                return;
+            }
+
+            for (const student of shuffleArray(naughtyStudents.slice())) {
+                if (!assignedSeats[student] && !assignStudent(student, getHeight(student), true, true)) {
+                    alert('Unable to seat all naughty students in the first row (nearest to the blackboard).');
+                    return;
+                }
+            }
+
+            if (!placePairs(isShortPair)) {
+                return;
+            }
+            if (!placePairs(isMixedPair)) {
+                return;
+            }
+            if (!placeIndividuals(shortStudents, 'short')) {
+                alert("Unable to place all students with the given restrictions. Try to press “Generate Seating Plan” again.");
+                return;
+            }
+
+            if (!placePairs((student1, student2) => !isNaughty(student1) && !isNaughty(student2) && !isShortPair(student1, student2) && !isMixedPair(student1, student2))) {
+                return;
+            }
+
+            let allAssigned = placeIndividuals(tallStudents, 'tall') && placeIndividuals(mediumStudents, 'medium');
+
+            if (!allAssigned) {
+                alert("Unable to place all students with the given restrictions. Try to press “Generate Seating Plan” again.");
+                return;
+            }
+
+            if (packTowardBlackboard) {
+                const placed = Object.keys(assignedSeats).map(id => {
+                    const student = parseInt(id, 10);
+                    const [row, col] = assignedSeats[student];
+                    return { student, row, col };
+                });
+                if (placed.length > 0) {
+                    const backRow = Math.min(...placed.map(p => p.row));
+                    const inBack = placed.filter(p => p.row === backRow);
+                    if (inBack.length < cols) {
+                        const original = inBack.map(p => ({ student: p.student, row: p.row, col: p.col }));
+                        for (const p of inBack) {
+                            delete assignedSeats[p.student];
+                            availableSeats.push([p.row, p.col]);
+                        }
+                        const deskOrder = getTopRowDeskOrder(Math.ceil(cols / 2));
+                        const seatOrder = [];
+                        for (const desk of deskOrder) {
+                            const left = desk * 2;
+                            const right = left + 1;
+                            if (left < cols) {
+                                seatOrder.push([backRow, left]);
+                            }
+                            if (right < cols) {
+                                seatOrder.push([backRow, right]);
+                            }
+                        }
+                        let compacted = true;
+                        for (const student of inBack.map(p => p.student)) {
+                            let seated = false;
+                            for (const [row, col] of seatOrder) {
+                                const seatIndex = availableSeats.findIndex(seat => seat[0] === row && seat[1] === col);
+                                if (seatIndex === -1) {
+                                    continue;
+                                }
+                                if (isSeatValid(student, row, col, assignedSeats, restrictions)) {
+                                    assignedSeats[student] = [row, col];
+                                    availableSeats.splice(seatIndex, 1);
+                                    seated = true;
+                                    break;
+                                }
+                            }
+                            if (!seated) {
+                                compacted = false;
+                                break;
+                            }
+                        }
+                        if (!compacted) {
+                            for (const student of inBack.map(p => p.student)) {
+                                if (assignedSeats[student]) {
+                                    const [row, col] = assignedSeats[student];
+                                    availableSeats.push([row, col]);
+                                    delete assignedSeats[student];
+                                }
+                            }
+                            for (const p of original) {
+                                assignedSeats[p.student] = [p.row, p.col];
+                                availableSeats = availableSeats.filter(seat => !(seat[0] === p.row && seat[1] === p.col));
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (let i = 0; i < rows; i++) {
+                const row = [];
+                for (let j = 0; j < cols; j++) {
+                    row.push('<td></td>');
+                }
+                plan.push(row);
+            }
+
+            for (const student in assignedSeats) {
+                const [row, col] = assignedSeats[student];
+                let heightClass = '';
+                if (tallStudents.includes(parseInt(student))) {
+                    heightClass = 'tall';
+                } else if (mediumStudents.includes(parseInt(student))) {
+                    heightClass = 'medium';
+                } else {
+                    heightClass = 'short';
+                }
+                const studentNo = parseInt(student, 10);
+                const label = seatLabel(classList ? classList.get(studentNo) : null, studentNo);
+                plan[row][col] = `<td class="${heightClass}"${seatFaceAttr(label)}>${escapeHtml(label)}</td>`;
+            }
+
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+            const table = document.createElement('table');
+            if (seatTypeface) table.classList.add('template-font');
+            plan.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => tr.innerHTML += cell);
+                table.appendChild(tr);
+            });
+            container.appendChild(table);
+            lastSeats = {
+                rows,
+                cols,
+                seats: Array.from({ length: rows }, (_, row) => Array.from({ length: cols }, (_, col) => {
+                    const found = Object.entries(assignedSeats).find(([, position]) => position[0] === row && position[1] === col);
+                    return found ? parseInt(found[0], 10) : null;
+                }))
+            };
+
+            document.getElementById('blackboard').style.display = 'block';
+            document.getElementById('export-button').style.display = 'block'; // Show export button
+            prepareSeatDragging();
+            paintSeatFonts();
+        }
+
+        async function exportToWord() {
+            if (!wordTemplate) {
+                const container = document.getElementById('container');
+                const tableHtml = container.innerHTML;
+                const blackboardContent = document.getElementById('blackboard').innerHTML;
+                const instructions = `<p>Instructions:<br>
+                          1. To save any change: file -> save as -> set file format as .doc instead of .htm<br>
+                          2. To change the document orientation from portrait to landscape: layout -> orientation -> landscape<br>
+                          3. To insert a break between columns: right click -> insert -> columns to the left/right</p>`;
+                const header = `<html xmlns:w="urn:schemas-microsoft-com:office:word">
+                    <head>
+                        <meta charset="utf-8">
+                        <title>Seating Plan</title>
+                        <style>
+                            table { border-collapse: collapse; width: 100%; }
+                            tr { min-height: 50px; }
+                            td { border: 1px solid #d4e3e8; padding: 10px; text-align: center; }
+                            .tall { background-color: #d9f2df; }
+                            .medium { background-color: #f3f5c8; }
+                            .short { background-color: #f6e4ea; }
+                            .blackboard { color: white; background-color: #156872; padding: 10px; margin-top: 20px; border-radius: 5px; text-align: center; }
+                            .blackboard-container { display: flex; justify-content: center; align-items: flex-end; margin-top: 20px; }
+                        </style>
+                    </head>
+                    <body>
+                        ${instructions}
+                        ${tableHtml}
+                        <div class="blackboard-container">
+                            <div class="blackboard">${blackboardContent}</div>
+                        </div>
+                    </body>
+                  </html>`;
+                downloadBlob(new TextEncoder().encode(header), 'Seating Plan.doc', 'application/msword');
+                return;
+            }
+            const rows = parseInt(document.getElementById('rows').value, 10);
+            const cols = parseInt(document.getElementById('cols').value, 10);
+            if (!lastSeats || lastSeats.rows !== rows || lastSeats.cols !== cols) {
+                alert('Generate a seating plan for these rows and columns before exporting.');
+                return;
+            }
+            if (!classList) {
+                const seated = lastSeats.seats.flat().filter(no => no != null);
+                alert(seated.length === 1
+                    ? `No. ${seated[0]} is missing from the class list.`
+                    : `No. ${seated.join(', No. ')} are missing from the class list.`);
+                return;
+            }
+            if (templateKind === 'xlsx') {
+                const result = await fillExcelTemplate(wordTemplate, { rows, cols, seats: lastSeats.seats, students: classList });
+                if (!result.ok) {
+                    alert(result.error);
+                    return;
+                }
+                downloadBlob(result.bytes, 'Seating Plan.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                return;
+            }
+            const xml = new TextDecoder().decode((await unzip(wordTemplate)).get('word/document.xml'));
+            const result = fillDocument(xml, { rows, cols, seats: lastSeats.seats, students: classList });
+            if (!result.ok) {
+                alert(result.error);
+                return;
+            }
+            const bytes = replaceZipEntry(wordTemplate, 'word/document.xml', new TextEncoder().encode(result.xml));
+            downloadBlob(bytes, 'Seating Plan.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        }
+
+        function isSeatValid(student, row, col, assignedSeats, restrictions) {
+            for (const [restricted1, restricted2] of restrictions) {
+                if ((student === restricted1 && assignedSeats[restricted2] && areSeatsNear(row, col, assignedSeats[restricted2][0], assignedSeats[restricted2][1])) || 
+                    (student === restricted2 && assignedSeats[restricted1] && areSeatsNear(row, col, assignedSeats[restricted1][0], assignedSeats[restricted1][1]))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function areSeatsNear(row1, col1, row2, col2) {
+            const rowDiff = Math.abs(row1 - row2);
+            const colDiff = Math.abs(col1 - col2);
+            return (rowDiff <= 1 && colDiff <= 1);
+        }
+
+        function resetForm() {
+            document.getElementById('rows').value = 4;
+            document.getElementById('cols').value = 8;
+            document.getElementById('students').value = 32;
+            document.getElementById('tall').value = '';
+            document.getElementById('short').value = '';
+            document.getElementById('naughty').value = '';
+            document.getElementById('restrictions').value = '';
+            document.getElementById('together').value = '';
+            document.getElementById('container').innerHTML = '';
+            const unseatedDrop = document.getElementById('unseated-drop');
+            unseatedDrop.replaceChildren();
+            unseatedDrop.hidden = true;
+            document.getElementById('blackboard').style.display = 'none';
+            document.getElementById('export-button').style.display = 'none'; // Hide export button
+            classList = null;
+            classListBytes = null;
+            classListName = null;
+            wordTemplate = null;
+            templateKind = null;
+            templateName = null;
+            seatTypeface = null;
+            lastSeats = null;
+            forgetState();
+            document.getElementById('class-list-file').value = '';
+            document.getElementById('word-template-file').value = '';
+            document.getElementById('class-list-status').textContent = '';
+            document.getElementById('word-template-status').textContent = '';
+        }
+
+        function keptFileNote(kind) {
+            if (kind === 'class' && classList) return ' The class list already loaded is still the one that will export.';
+            if (kind === 'template' && wordTemplate) return ' The seating plan template already loaded is still the one that will export.';
+            return '';
+        }
+
+        document.getElementById('download-class-list').addEventListener('click', () => {
+            downloadBlob(buildClassListTemplate(), 'Class List Template.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        });
+
+        document.getElementById('class-list-file').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!file.name.toLowerCase().endsWith('.xlsx')) {
+                document.getElementById('class-list-status').textContent = 'Upload a .xlsx class list.' + keptFileNote('class');
+                return;
+            }
+            const bytes = new Uint8Array(await file.arrayBuffer());
+            const parsed = await parseClassList(bytes);
+            if (!parsed.ok) {
+                document.getElementById('class-list-status').textContent = parsed.error + keptFileNote('class');
+                return;
+            }
+            classList = parsed.students;
+            classListBytes = bytes;
+            classListName = file.name;
+            document.getElementById('class-list-status').textContent = `Class list loaded (${classList.size} students).`;
+            rememberState();
+        });
+
+        document.getElementById('word-template-file').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const kind = templateFileKind(file.name);
+            if (!kind) {
+                document.getElementById('word-template-status').textContent = TEMPLATE_FILE_ERROR + keptFileNote('template');
+                return;
+            }
+            try {
+                const bytes = new Uint8Array(await file.arrayBuffer());
+                const files = kind === 'docx' ? await unzip(bytes) : null;
+                const count = kind === 'xlsx'
+                    ? await countExcelDesks(bytes)
+                    : deskBoxes(new TextDecoder().decode(files.get('word/document.xml'))).length;
+                if (!Number.isInteger(count)) throw new Error('unread');
+                wordTemplate = bytes;
+                templateKind = kind;
+                templateName = file.name;
+                seatTypeface = kind === 'xlsx'
+                    ? await excelTypeface(bytes)
+                    : deskTypeface(
+                        new TextDecoder().decode(files.get('word/document.xml')),
+                        files.get('word/styles.xml') ? new TextDecoder().decode(files.get('word/styles.xml')) : ''
+                    );
+                paintSeatFonts();
+                document.getElementById('word-template-status').textContent = templateStatus(kind, count);
+                rememberState();
+            } catch {
+                document.getElementById('word-template-status').textContent = (kind === 'xlsx'
+                    ? 'This Excel file could not be read.'
+                    : 'This Word file could not be read.') + keptFileNote('template');
+            }
+        });
+
+        for (const id of RULE_IDS) {
+            document.getElementById(id).addEventListener('input', rememberState);
+        }
+
+        async function restoreRemembered() {
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem(REMEMBER_KEY) || 'null'); } catch { return; }
+            if (!saved) return;
+            restoring = true;
+            try {
+                if (saved.rules) {
+                    for (const id of RULE_IDS) {
+                        if (saved.rules[id] != null) document.getElementById(id).value = saved.rules[id];
+                    }
+                }
+                if (saved.classList) {
+                    try {
+                        const bytes = base64ToBytes(saved.classList);
+                        const parsed = await parseClassList(bytes);
+                    if (parsed.ok) {
+                        classListBytes = bytes;
+                        classList = parsed.students;
+                        classListName = saved.classListName || 'Class list.xlsx';
+                        showRememberedUpload(document.getElementById('class-list-file'), bytes, classListName);
+                        document.getElementById('class-list-status').textContent = `Class list loaded (${classList.size} students).`;
+                    }
+                    } catch { /* keep the rules even if the stored list cannot be read */ }
+                }
+                if (saved.template && (saved.templateKind === 'docx' || saved.templateKind === 'xlsx')) {
+                    try {
+                        const bytes = base64ToBytes(saved.template);
+                        const kind = saved.templateKind;
+                        const files = kind === 'docx' ? await unzip(bytes) : null;
+                        const count = kind === 'xlsx'
+                            ? await countExcelDesks(bytes)
+                            : deskBoxes(new TextDecoder().decode(files.get('word/document.xml'))).length;
+                    if (!Number.isInteger(count)) return;
+                    wordTemplate = bytes;
+                    templateKind = kind;
+                    templateName = saved.templateName || (kind === 'xlsx' ? 'Seating plan.xlsx' : 'Seating plan.docx');
+                    showRememberedUpload(document.getElementById('word-template-file'), bytes, templateName);
+                    seatTypeface = kind === 'xlsx'
+                            ? await excelTypeface(bytes)
+                            : deskTypeface(
+                                new TextDecoder().decode(files.get('word/document.xml')),
+                                files.get('word/styles.xml') ? new TextDecoder().decode(files.get('word/styles.xml')) : ''
+                            );
+                        document.getElementById('word-template-status').textContent = templateStatus(kind, count);
+                    } catch { /* the stored template is skipped if it cannot be read */ }
+                }
+            } finally {
+                restoring = false;
+            }
+        }
+
+        bindSeatDragging();
+        restoreRemembered();
+    </script>
+</body>
+</html>
